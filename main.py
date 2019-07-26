@@ -76,9 +76,9 @@ class Lightwave:
             print("Warning: the chosen delay between steps might be too low")
 
         # select channel
-        self.inst.write("CH {}".format(i))
+        self.inst.write("CH {}".format(channel))
         # turn on/off selected channel
-        self.inst.write("OUT {}".format(int(i in channels)))
+        self.inst.write("OUT 1")
 
         for power in np.arange(start, stop, step):
             self.set_channel_power(channel, power)
