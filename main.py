@@ -61,7 +61,7 @@ class Lightwave:
         self.inst.write("LEVEL {}".format(power))
     
     def sweep_channel_power(self, channel, start, stop, step, seconds):
-        """Sweeps the power output
+        """Turn on a channel and sweeps the power output
 
         Args:
             channel (int)
@@ -74,6 +74,11 @@ class Lightwave:
 
         if seconds < 2:
             print("Warning: the chosen delay between steps might be too low")
+
+        # select channel
+        self.inst.write("CH {}".format(i))
+        # turn on/off selected channel
+        self.inst.write("OUT {}".format(int(i in channels)))
 
         for power in np.arange(start, stop, step):
             self.set_channel_power(channel, power)
