@@ -1,4 +1,7 @@
+import time
+
 import visa
+import numpy as np
 
 # TODO: make a function for sweeping
 
@@ -57,7 +60,25 @@ class Lightwave:
         # turn on/off selected channel
         self.inst.write("LEVEL {}".format(power))
     
-    # def sweep_cu
+    def sweep_channel_power(self, channel, start, stop, step, seconds):
+        """Sweeps the power output
+
+        Args:
+            channel (int)
+            start (number) - starting point of sweep
+            stop (number) - sweep does not include this value
+            step (number) - size of step
+            seconds (number) - time between steps
+        """
+        assert isinstance(channel, int), "Channel must be an int"
+
+        if seconds < 2:
+            print("Warning: the chosen delay between steps might be too low")
+
+        for power in np.arange(start, stop, step):
+            self.set_channel_power(channel, power)
+            time.sleep(delay)
+
     
     def set_channel_wavelength(self, channel, wavelength):
         """Sets wavelength on a specified channel
@@ -69,6 +90,10 @@ class Lightwave:
         assert isinstance(channel, int), "Channel must be an int"
         assert isinstance(wavelength, float), "Wavelength must be a float"
 
+        if (wavelength - default_wavelengths[channel - 1])**2 > 9:
+            print("Warning: you might be using a wavelength outside supported range, default is {} and you're using {}".
+                format(default_wavelengths[channel - 1], wavelength))
+
         default_wavelengths = (1544.53,
                                1545.32,
                                1546.92,
@@ -77,10 +102,6 @@ class Lightwave:
                                1558.98,
                                1561.42,
                                1562.23)
-
-        if (wavelength - default_wavelengths[channel - 1])**2 > 9:
-            print("Warning: you might be using a wavelength outside supported range, default is {} and you're using {}".
-                format(default_wavelengths[channel - 1], wavelength))
 
         # select channel
         self.inst.write("CH {}".format(channel))
