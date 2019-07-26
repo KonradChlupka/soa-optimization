@@ -1,6 +1,5 @@
 import visa
 
-# TODO: check if all channels work as expected
 # TODO: make a function for sweeping
 
 class Lightwave:
@@ -57,6 +56,8 @@ class Lightwave:
         self.inst.write("CH {}".format(channel))
         # turn on/off selected channel
         self.inst.write("LEVEL {}".format(power))
+    
+    # def sweep_cu
     
     def set_channel_wavelength(self, channel, wavelength):
         """Sets wavelength on a specified channel
