@@ -1,8 +1,7 @@
 import visa
 
-"""goals: be able to turn on or off any of the channels,
-set wavelength and power on any of them, sweep them independently"""
 # TODO: check if all channels work as expected
+# TODO: make a function for sweeping
 
 class Lightwave:
     def __init__(self):
