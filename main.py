@@ -189,5 +189,5 @@ class Lightwave3220:
         self.rm.close()
 
 if __name__ == "__main__":
-    x = Lightwave7900B()
-    x.start_channels((1,))
+    laser = Lightwave7900B()
+    current_source = Lightwave3220()
