@@ -60,7 +60,7 @@ class Lightwave7900B:
         self.inst.write("LEVEL {}".format(power))
     
     def sweep_channel_power(self, channel, start, stop, step, seconds):
-        """Turn on a channel and sweeps the power output
+        """Turns on a channel and sweeps the power output
 
         Args:
             channel (int)
@@ -83,7 +83,6 @@ class Lightwave7900B:
             self.set_channel_power(channel, power)
             time.sleep(seconds)
 
-    
     def set_channel_wavelength(self, channel, wavelength):
         """Sets wavelength on a specified channel
 
@@ -139,7 +138,50 @@ class Lightwave3220:
             print("Couldn't find ILX Lightwave LDX-3220")
             self.inst = None
     
+    def set_output(self, current, switch_output_on=True):
+        """Sets the current output to specified value
 
+        Args:
+            current (number)
+            switch_output_on (bool) - if True, it will turn on the
+                output after specifying the current, otherwise it will
+                stay in the initial state, whether on or off
+        """
+        assert isinstance(current, int) or isinstance(current, float), "Current must be a number"
+        assert isinstance(switch_output_on, bool), "switch_output_on must be a bool"
+        assert current >= 0, "Current must be non-negative"
+
+        # set output in mA
+        self.inst.write("LAS:LDI {}".format(current))
+        # switch current source on (stays on if already on)
+        self.inst.write("LAS:OUT 1")
+    
+    def sweep_current(self, start, stop, step, seconds):
+        """Turns on the current source and sweeps the output current
+
+        Args:
+            start (number) - starting point of sweep in mA
+            stop (number) - sweep does not include this value in mA
+            step (number) - size of step in mA
+            seconds (number) - time between steps
+        """
+        assert isinstance(seconds, int) or isinstance(seconds, float), "Seconds must be a number"
+        
+        if seconds < 0.5: # TODO: select optimal value
+            print("Warning: the chosen delay between steps might be too low")
+        
+        # switch current source on (stays on if already on)
+        self.inst.write("LAS:OUT 1")
+
+        # sweep the output
+        for current in np.arange(start, stop, step):
+            self.set_output(current, switch_output_on=False)
+            time.sleep(seconds)
+
+    def switch_off(self):
+        """Switches the current source off
+        """
+        self.inst.write("LAS:OUT 0")
 
     def close(self):
         """Close resource manager
