@@ -117,6 +117,34 @@ class Lightwave7900B:
         """
         self.rm.close()
 
+class Lightwave3220:
+    def __init__(self):
+        # open resource manager
+        self.rm = visa.ResourceManager()
+
+        print("Looking for ILX Lightwave LDX-3220")
+        self.inst = None
+        for inst_str in self.rm.list_resources():
+            print("Checking resource at {}".format(inst_str))
+            try:
+                inst = self.rm.open_resource(inst_str)
+                query = inst.query("*IDN?")
+                if "ILX Lightwave,3220" in query:
+                    print("Found {}".format(query))
+                    self.inst = inst
+                    break
+            except Exception: # TODO: less generic exception
+                pass
+        if self.inst is None:
+            print("Couldn't find ILX Lightwave LDX-3220")
+            self.inst = None
+    
+
+    def close(self):
+        """Close resource manager
+        """
+        self.rm.close()
+
 if __name__ == "__main__":
     x = Lightwave7900B()
     x.start_channels((1,))
