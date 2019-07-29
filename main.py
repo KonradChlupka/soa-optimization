@@ -175,7 +175,7 @@ class Lightwave3220:
 
         # sweep the output
         for current in np.arange(start, stop, step):
-            self.set_output(current, switch_output_on=False)
+            self.set_output(float(current), switch_output_on=False)
             time.sleep(seconds)
 
     def switch_off(self):
