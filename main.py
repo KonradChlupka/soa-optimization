@@ -20,7 +20,7 @@ class Lightwave7900B:
                     print("Found {}".format(query))
                     self.inst = inst
                     break
-            except Exception: # TODO: less generic exception
+            except Exception:
                 pass
         if self.inst is None:
             print("Couldn't find ILX Lightwave 7900B")
@@ -133,12 +133,13 @@ class Lightwave3220:
                     print("Found {}".format(query))
                     self.inst = inst
                     break
-            except Exception: # TODO: less generic exception
+            except Exception:
                 pass
         if self.inst is None:
             print("Couldn't find ILX Lightwave LDX-3220")
             self.inst = None
     
+
 
     def close(self):
         """Close resource manager
