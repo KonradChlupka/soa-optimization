@@ -4,7 +4,7 @@ import visa
 import numpy as np
 
 
-class Lightwave:
+class Lightwave7900B:
     def __init__(self):
         # open resource manager
         self.rm = visa.ResourceManager()
@@ -118,5 +118,5 @@ class Lightwave:
         self.rm.close()
 
 if __name__ == "__main__":
-    x = Lightwave()
+    x = Lightwave7900B()
     x.start_channels((1,))
