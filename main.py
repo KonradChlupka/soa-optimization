@@ -81,7 +81,7 @@ class Lightwave:
 
         for power in np.arange(start, stop, step):
             self.set_channel_power(channel, power)
-            time.sleep(delay)
+            time.sleep(seconds)
 
     
     def set_channel_wavelength(self, channel, wavelength):
