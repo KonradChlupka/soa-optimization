@@ -3,7 +3,6 @@ import time
 import visa
 import numpy as np
 
-# TODO: make a function for sweeping
 
 class Lightwave:
     def __init__(self):
