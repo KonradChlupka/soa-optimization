@@ -167,7 +167,7 @@ class Lightwave3220:
         """
         assert isinstance(seconds, int) or isinstance(seconds, float), "Seconds must be a number"
         
-        if seconds < 0.5: # TODO: select optimal value
+        if seconds < 0.1:
             print("Warning: the chosen delay between steps might be too low")
         
         # switch current source on (stays on if already on)
