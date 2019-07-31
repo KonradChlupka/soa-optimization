@@ -255,6 +255,32 @@ class AnritsuMS9740A:
             print("Couldn't find Anritsu MS9740A")
             self.inst = None
     
+    def set_x(self, center=None, span=None, start=None, stop=None):
+        """TODO
+        """
+        if center:
+            self.inst.write("CNT {}".format(center))
+        if span:
+            self.inst.write("SPN {}".format(span))
+        if start:
+            self.inst.write("STA {}".format(start))
+        if stop:
+            self.inst.write("STO {}".format(stop))
+
+
+    
+    def set_y(self, db_per_div=None, ref=None):
+        pass
+    
+    def set_resolution(self, res):
+        pass
+    
+    def set_VBW(self, VBW):
+        pass
+    
+    def set_sampling_points(self, n):
+        pass
+
     def close(self):
         """Close resource manager
         """
@@ -262,6 +288,6 @@ class AnritsuMS9740A:
 
 
 if __name__ == "__main__":
-    laser = Lightwave7900B("GPIB1::2::INSTR")
-    current_source = Lightwave3220("GPIB1::12::INSTR")
+    # laser = Lightwave7900B("GPIB1::2::INSTR")
+    # current_source = Lightwave3220("GPIB1::12::INSTR")
     osa = AnritsuMS9740A("GPIB1::3::INSTR")
