@@ -5,13 +5,28 @@ import numpy as np
 
 
 class Lightwave7900B:
-    def __init__(self):
+    def __init__(self, address=None):
+        """Initializes object to communicate with Lightwave7900B
+
+        If no address is specified, __init__ will look through all the
+        avaliable addresses to find the device, otherwise, it will check
+        only the supplied address.
+
+        Args:
+            address (str): GPIB address of the device, e.g.
+                "GPIB1::1::INSTR"
+        """
         # open resource manager
         self.rm = visa.ResourceManager()
 
+        if address:
+            addresses = [address]
+        else:
+            addresses = self.rm.list_resources()
+
         print("Looking for ILX Lightwave 7900")
         self.inst = None
-        for inst_str in self.rm.list_resources():
+        for inst_str in addresses:
             print("Checking resource at {}".format(inst_str))
             try:
                 inst = self.rm.open_resource(inst_str)
@@ -117,9 +132,24 @@ class Lightwave7900B:
         self.rm.close()
 
 class Lightwave3220:
-    def __init__(self):
+    def __init__(self, address=None):
+        """Initializes object to communicate with Lightwave3220
+
+        If no address is specified, __init__ will look through all the
+        avaliable addresses to find the device, otherwise, it will check
+        only the supplied address.
+
+        Args:
+            address (str): GPIB address of the device, e.g.
+                "GPIB1::1::INSTR"
+        """
         # open resource manager
         self.rm = visa.ResourceManager()
+
+        if address:
+            addresses = [address]
+        else:
+            addresses = self.rm.list_resources()
 
         print("Looking for ILX Lightwave LDX-3220")
         self.inst = None
@@ -189,5 +219,6 @@ class Lightwave3220:
         self.rm.close()
 
 if __name__ == "__main__":
-    laser = Lightwave7900B()
-    current_source = Lightwave3220()
+    pass
+    # laser = Lightwave7900B()
+    # current_source = Lightwave3220()
