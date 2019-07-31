@@ -153,7 +153,7 @@ class Lightwave3220:
 
         print("Looking for ILX Lightwave LDX-3220")
         self.inst = None
-        for inst_str in self.rm.list_resources():
+        for inst_str in addresses:
             print("Checking resource at {}".format(inst_str))
             try:
                 inst = self.rm.open_resource(inst_str)
@@ -240,7 +240,7 @@ class AnritsuMS9740A:
 
         print("Looking for Anritsu MS9740A")
         self.inst = None
-        for inst_str in self.rm.list_resources():
+        for inst_str in addresses:
             print("Checking resource at {}".format(inst_str))
             try:
                 inst = self.rm.open_resource(inst_str)
