@@ -217,8 +217,51 @@ class Lightwave3220:
         """Close resource manager
         """
         self.rm.close()
+    
+class AnritsuMS9740A:
+    def __init__(self, address=None):
+        """Initializes object to communicate with Anritsu MS9740A
+
+        If no address is specified, __init__ will look through all the
+        avaliable addresses to find the device, otherwise, it will check
+        only the supplied address.
+
+        Args:
+            address (str): GPIB address of the device, e.g.
+                "GPIB1::1::INSTR"
+        """
+        # open resource manager
+        self.rm = visa.ResourceManager()
+
+        if address:
+            addresses = [address]
+        else:
+            addresses = self.rm.list_resources()
+
+        print("Looking for Anritsu MS9740A")
+        self.inst = None
+        for inst_str in self.rm.list_resources():
+            print("Checking resource at {}".format(inst_str))
+            try:
+                inst = self.rm.open_resource(inst_str)
+                query = inst.query("*IDN?")
+                if "ANRITSU,MS9740A" in query:
+                    print("Found {}".format(query))
+                    self.inst = inst
+                    break
+            except Exception:
+                pass
+        if self.inst is None:
+            print("Couldn't find Anritsu MS9740A")
+            self.inst = None
+    
+    def close(self):
+        """Close resource manager
+        """
+        self.rm.close()
+
 
 if __name__ == "__main__":
-    pass
-    # laser = Lightwave7900B()
-    # current_source = Lightwave3220()
+    laser = Lightwave7900B("GPIB1::2::INSTR")
+    current_source = Lightwave3220("GPIB1::12::INSTR")
+    osa = AnritsuMS9740A("GPIB1::3::INSTR")
