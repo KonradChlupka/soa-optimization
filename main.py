@@ -286,13 +286,13 @@ class AnritsuMS9740A:
             stop (number)
         """
         if center:
-            assert center >= 600 and center <= 1750, "Parameter outside supported range"
+            assert 600 <= center <= 1750, "Parameter outside supported range"
         if span:
             assert span > 0, "Parameter outside supported range"
         if start:
-            assert start >= 600 and start <= 1750, "Parameter outside supported range"
+            assert 600 <= start <= 1750, "Parameter outside supported range"
         if stop:
-            assert stop >= 600 and stop <= 1750, "Parameter outside supported range"
+            assert 600 <= stop <= 1750, "Parameter outside supported range"
 
         if center:
             self.inst.write("CNT {}".format(center))
@@ -315,10 +315,10 @@ class AnritsuMS9740A:
         """
         if db_per_div:
             assert (
-                db_per_div >= 0.1 and db_per_div <= 10
+                0.1 <= db_per_div  <= 10
             ), "Parameter outside supported range"
         if ref:
-            assert ref >= -100 and ref <= 100, "Parameter outside supported range"
+            assert -100 <= ref <= 100, "Parameter outside supported range"
 
         if db_per_div:
             self.inst.write("LOG {}".format(db_per_div))
