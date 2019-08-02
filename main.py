@@ -285,10 +285,14 @@ class AnritsuMS9740A:
             start (number)
             stop (number)
         """
-        assert center >= 600 and center <= 1750, "Parameter outside supported range"
-        assert span >= 600 and span <= 1750, "Parameter outside supported range"
-        assert start >= 600 and start <= 1750, "Parameter outside supported range"
-        assert stop >= 600 and stop <= 1750, "Parameter outside supported range"
+        if center:
+            assert center >= 600 and center <= 1750, "Parameter outside supported range"
+        if span:
+            assert span >= 600 and span <= 1750, "Parameter outside supported range"
+        if start:
+            assert start >= 600 and start <= 1750, "Parameter outside supported range"
+        if stop:
+            assert stop >= 600 and stop <= 1750, "Parameter outside supported range"
 
         if center:
             self.inst.write("CNT {}".format(center))
