@@ -305,15 +305,19 @@ class AnritsuMS9740A:
         args:
             db_per_div (number): distance between divs, in dB. Must be
                 between 0.1 and 10
-            ref (number): at the time of setting the Log scale, this command sets and queries the reference level 
+            ref (number): at the time of setting the Log scale, this
+                command sets the reference level. Must be between -100
+                and 100
         """
         assert (
             db_per_div >= 0.1 and db_per_div <= 10
         ), "Parameter outside supported range"
-        assert ref >= 0.1 and ref <= 10, "Parameter outside supported range"
+        assert ref >= -100 and ref <= 100, "Parameter outside supported range"
 
         if db_per_div:
             self.inst.write("LOG {}".format(db_per_div))
+        if ref:
+            self.inst.write("RLV {}".format(ref))
 
     def set_resolution(self, res):
         pass
