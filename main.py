@@ -79,10 +79,10 @@ class Lightwave7900B:
 
         Args:
             channel (int)
-            start (number) - starting point of sweep
-            stop (number) - sweep does not include this value
-            step (number) - size of step
-            seconds (number) - time between steps
+            start (number): starting point of sweep
+            stop (number): sweep does not include this value
+            step (number): size of step
+            seconds (number): time between steps
         """
         assert isinstance(channel, int), "Channel must be an int"
 
@@ -173,7 +173,7 @@ class Lightwave3220:
 
         Args:
             current (number)
-            switch_output_on (bool) - if True, it will turn on the
+            switch_output_on (bool): if True, it will turn on the
                 output after specifying the current, otherwise it will
                 stay in the initial state, whether on or off
         """
@@ -190,10 +190,10 @@ class Lightwave3220:
         """Turns on the current source and sweeps the output current
 
         Args:
-            start (number) - starting point of sweep in mA
-            stop (number) - sweep does not include this value in mA
-            step (number) - size of step in mA
-            seconds (number) - time between steps
+            start (number): starting point of sweep in mA
+            stop (number): sweep does not include this value in mA
+            step (number): size of step in mA
+            seconds (number): time between steps
         """
         assert isinstance(seconds, int) or isinstance(seconds, float), "Seconds must be a number"
         
@@ -256,8 +256,22 @@ class AnritsuMS9740A:
             self.inst = None
     
     def set_x(self, center=None, span=None, start=None, stop=None):
-        """TODO
+        """Sets parameters (in nm) related to x axis
+
+        Any one of these can be used, and the later parameters will
+        overwrite the previous parameters.
+
+        args:
+            center (number)
+            span (number)
+            start (number)
+            stop (number)
         """
+        assert center >= 600 and center <= 1750, "Parameter outside supported range"
+        assert span >= 600 and span <= 1750, "Parameter outside supported range"
+        assert start >= 600 and start <= 1750, "Parameter outside supported range"
+        assert stop >= 600 and stop <= 1750, "Parameter outside supported range"
+
         if center:
             self.inst.write("CNT {}".format(center))
         if span:
@@ -270,7 +284,19 @@ class AnritsuMS9740A:
 
     
     def set_y(self, db_per_div=None, ref=None):
-        pass
+        """Sets parameter related to y axis
+
+        args:
+            db_per_div (number): distance between divs, in dB. Must be
+                between 0.1 and 10
+            ref (number): at the time of setting the Log scale, this command sets and queries the reference level 
+        """
+        assert db_per_div >= 0.1 and db_per_div <= 10,
+            "Parameter outside supported range"
+        assert ref >= 0.1 and ref <= 10, "Parameter outside supported range"
+
+        if db_per_div:
+            self.inst.write("LOG {}".format(db_per_div))
     
     def set_resolution(self, res):
         pass
