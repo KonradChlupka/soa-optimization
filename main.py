@@ -366,7 +366,17 @@ class AnritsuMS9740A:
         self.inst.write("VBW {}".format(VBW))
 
     def set_sampling_points(self, n):
-        pass
+        """Sets the number of sampling points
+
+        args:
+            n (int): number of sampling points, must be one of the
+                numbers: 51|101|251|501|1001|2001|5001|10001|20001|50001
+        """
+        allowed_n = (51, 101, 251, 501, 1001, 2001, 5001, 10001, 20001, 50001)
+        assert type(n) is int, "Number of sampling points must be int"
+        assert n in allowed_n, "VBW must be one of the following: {}".format(allowed_n)
+
+        self.inst.write("MPT {}".format(n))
 
     def close(self):
         """Close resource manager
