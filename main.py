@@ -386,6 +386,34 @@ class AnritsuMS9740A:
 
         self.inst.write("MPT {}".format(n))
 
+    def ana_rms(self, spectrum_level, spectrum_deviation_factor):
+        """Executes the RMS spectrum analysis method
+
+        args:
+            spectrum_level (number): in dB, between 0.1 and 50.0
+            spectrum_deviation_factor (number): K: Standard deviation
+                factor, between 1.0 and 10.0
+        
+        returns:
+            TODO
+        """
+        assert isinstance(
+            spectrum_level, (int, float)
+        ), "spectrum_level must be a nuber"
+        assert isinstance(
+            spectrum_deviation_factor, (int, float)
+        ), "spectrum_deviation_factor must be a nuber"
+        assert (
+            0.1 <= spectrum_level <= 50.0
+        ), "spectrum_level must be between 0.1 and 50.0"
+        assert (
+            1.0 <= spectrum_deviation_factor <= 10.0
+        ), "spectrum_deviation_factor must be between 1.0 and 10.0"
+        self.inst.write(
+            "ANA RMS,{},{}".format(spectrum_level, spectrum_deviation_factor)
+        )
+        return self.inst.query("ANAR?")
+
     def close(self):
         """Close resource manager
         """
