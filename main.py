@@ -329,12 +329,14 @@ class AnritsuMS9740A:
         """Sets resolution
 
         args:
-            resolution (float): must be only one of the following:
-                0.03|0.05|0.07|0.1|0.2|0.5|1.0
+            resolution (float): resolution in nm must be only one of the
+                following: 0.03|0.05|0.07|0.1|0.2|0.5|1.0
         """
         allowed_resolutions = (0.03, 0.05, 0.07, 0.1, 0.2, 0.5, 1.0)
 
-        assert resolution in allowed_resolutions, "Illegal resolution"
+        assert (
+            resolution in allowed_resolutions
+        ), "Resolution must be one of the following: {}".format(allowed_resolutions)
 
         self.inst.write("RES {}".format(resolution))
 
@@ -364,7 +366,7 @@ class AnritsuMS9740A:
             "100KHZ",
             "1MHZ",
         )
-        assert type(VBW) is int or type(VBW) is float, "VBW must be int or float"
+        assert type(VBW) is int or type(VBW) is str, "VBW must be int or str"
         assert VBW in allowed_VBW, "VBW must be one of the following: {}".format(
             allowed_VBW
         )
