@@ -40,7 +40,7 @@ class Lightwave7900B:
         if self.inst is None:
             print("Couldn't find ILX Lightwave 7900B")
             self.inst = None
-    
+
     def start_channels(self, channels=(1,)):
         """Selects and starts specified channels
 
@@ -55,7 +55,7 @@ class Lightwave7900B:
             self.inst.write("CH {}".format(i))
             # turn on/off selected channel
             self.inst.write("OUT {}".format(int(i in channels)))
-    
+
     def set_channel_power(self, channel, power):
         """Sets power on a specified channel
 
@@ -73,7 +73,7 @@ class Lightwave7900B:
         self.inst.write("CH {}".format(channel))
         # turn on/off selected channel
         self.inst.write("LEVEL {}".format(power))
-    
+
     def sweep_channel_power(self, channel, start, stop, step, seconds):
         """Turns on a channel and sweeps the power output
 
@@ -108,18 +108,23 @@ class Lightwave7900B:
         assert isinstance(channel, int), "Channel must be an int"
         assert isinstance(wavelength, float), "Wavelength must be a float"
 
-        if (wavelength - default_wavelengths[channel - 1])**2 > 9:
-            print("Warning: you might be using a wavelength outside supported range, default is {} and you're using {}".
-                format(default_wavelengths[channel - 1], wavelength))
+        default_wavelengths = (
+            1544.53,
+            1545.32,
+            1546.92,
+            1547.72,
+            1555.72,
+            1558.98,
+            1561.42,
+            1562.23,
+        )
 
-        default_wavelengths = (1544.53,
-                               1545.32,
-                               1546.92,
-                               1547.72,
-                               1555.72,
-                               1558.98,
-                               1561.42,
-                               1562.23)
+        if (wavelength - default_wavelengths[channel - 1]) ** 2 > 9:
+            print(
+                "Warning: you might be using a wavelength outside supported range, default is {} and you're using {}".format(
+                    default_wavelengths[channel - 1], wavelength
+                )
+            )
 
         # select channel
         self.inst.write("CH {}".format(channel))
@@ -130,6 +135,7 @@ class Lightwave7900B:
         """Close resource manager
         """
         self.rm.close()
+
 
 class Lightwave3220:
     def __init__(self, address=None, current_limit=None):
@@ -169,7 +175,7 @@ class Lightwave3220:
         if self.inst is None:
             print("Couldn't find ILX Lightwave LDX-3220")
             self.inst = None
-    
+
     def set_output(self, current, switch_output_on=True):
         """Sets the current output to specified value
 
@@ -179,19 +185,22 @@ class Lightwave3220:
                 output after specifying the current, otherwise it will
                 stay in the initial state, whether on or off
         """
-        assert isinstance(current, int) or isinstance(current, float), "Current must be a number"
+        assert isinstance(current, int) or isinstance(
+            current, float
+        ), "Current must be a number"
         assert isinstance(switch_output_on, bool), "switch_output_on must be a bool"
         assert current >= 0, "Current must be non-negative"
 
         if self.current_limit:
-            assert current <= self.current_limit,
-                "Selected current exceeds current_limit, use can adjust it"
+            assert (
+                current <= self.current_limit
+            ), "Selected current exceeds current_limit, use can adjust it"
 
         # set output in mA
         self.inst.write("LAS:LDI {}".format(current))
         # switch current source on (stays on if already on)
         self.inst.write("LAS:OUT 1")
-    
+
     def sweep_current(self, start, stop, step, seconds):
         """Turns on the current source and sweeps the output current
 
@@ -201,11 +210,13 @@ class Lightwave3220:
             step (number): size of step in mA
             seconds (number): time between steps
         """
-        assert isinstance(seconds, int) or isinstance(seconds, float), "Seconds must be a number"
-        
+        assert isinstance(seconds, int) or isinstance(
+            seconds, float
+        ), "Seconds must be a number"
+
         if seconds < 0.1:
             print("Warning: the chosen delay between steps might be too low")
-        
+
         # switch current source on (stays on if already on)
         self.inst.write("LAS:OUT 1")
 
@@ -223,7 +234,8 @@ class Lightwave3220:
         """Close resource manager
         """
         self.rm.close()
-    
+
+
 class AnritsuMS9740A:
     def __init__(self, address=None):
         """Initializes object to communicate with Anritsu MS9740A
@@ -260,7 +272,7 @@ class AnritsuMS9740A:
         if self.inst is None:
             print("Couldn't find Anritsu MS9740A")
             self.inst = None
-    
+
     def set_x(self, center=None, span=None, start=None, stop=None):
         """Sets parameters (in nm) related to x axis
 
@@ -287,8 +299,6 @@ class AnritsuMS9740A:
         if stop:
             self.inst.write("STO {}".format(stop))
 
-
-    
     def set_y(self, db_per_div=None, ref=None):
         """Sets parameter related to y axis
 
@@ -297,19 +307,20 @@ class AnritsuMS9740A:
                 between 0.1 and 10
             ref (number): at the time of setting the Log scale, this command sets and queries the reference level 
         """
-        assert db_per_div >= 0.1 and db_per_div <= 10,
-            "Parameter outside supported range"
+        assert (
+            db_per_div >= 0.1 and db_per_div <= 10
+        ), "Parameter outside supported range"
         assert ref >= 0.1 and ref <= 10, "Parameter outside supported range"
 
         if db_per_div:
             self.inst.write("LOG {}".format(db_per_div))
-    
+
     def set_resolution(self, res):
         pass
-    
+
     def set_VBW(self, VBW):
         pass
-    
+
     def set_sampling_points(self, n):
         pass
 
