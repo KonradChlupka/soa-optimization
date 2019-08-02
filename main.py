@@ -313,10 +313,12 @@ class AnritsuMS9740A:
                 command sets the reference level. Must be between -100
                 and 100
         """
-        assert (
-            db_per_div >= 0.1 and db_per_div <= 10
-        ), "Parameter outside supported range"
-        assert ref >= -100 and ref <= 100, "Parameter outside supported range"
+        if db_per_div:
+            assert (
+                db_per_div >= 0.1 and db_per_div <= 10
+            ), "Parameter outside supported range"
+        if ref:
+            assert ref >= -100 and ref <= 100, "Parameter outside supported range"
 
         if db_per_div:
             self.inst.write("LOG {}".format(db_per_div))
