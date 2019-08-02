@@ -323,8 +323,8 @@ class AnritsuMS9740A:
         """Sets resolution
 
         args:
-            resolution (float): resolution can be only one of the
-                numbers: 0.03|0.05|0.07|0.1|0.2|0.5|1.0
+            resolution (float): must be only one of the following:
+                0.03|0.05|0.07|0.1|0.2|0.5|1.0
         """
         allowed_resolutions = (0.03, 0.05, 0.07, 0.1, 0.2, 0.5, 1.0)
 
@@ -333,7 +333,37 @@ class AnritsuMS9740A:
         self.inst.write("RES {}".format(resolution))
 
     def set_VBW(self, VBW):
-        pass
+        """Sets VBW (video band width)
+
+        args:
+            VBW (int or str): VBW in Hz, must be one of the following:
+                10|100|200|1000|2000|10000|100000|1000000, or
+                10HZ|100HZ|200HZ|1KHZ|2KHZ|10KHZ|100KHZ|1MHZ
+        """
+        allowed_VBW = (
+            10,
+            100,
+            200,
+            1000,
+            2000,
+            10000,
+            100000,
+            1000000,
+            "10HZ",
+            "100HZ",
+            "200HZ",
+            "1KHZ",
+            "2KHZ",
+            "10KHZ",
+            "100KHZ",
+            "1MHZ",
+        )
+        assert type(VBW) is int or type(VBW) is float, "VBW must be int or float"
+        assert VBW in allowed_VBW, "VBW must be one of the following: {}".format(
+            allowed_VBW
+        )
+
+        self.inst.write("VBW {}".format(VBW))
 
     def set_sampling_points(self, n):
         pass
