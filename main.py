@@ -319,8 +319,18 @@ class AnritsuMS9740A:
         if ref:
             self.inst.write("RLV {}".format(ref))
 
-    def set_resolution(self, res):
-        pass
+    def set_resolution(self, resolution):
+        """Sets resolution
+
+        args:
+            resolution (float): resolution can be only one of the
+                numbers: 0.03|0.05|0.07|0.1|0.2|0.5|1.0
+        """
+        allowed_resolutions = (0.03, 0.05, 0.07, 0.1, 0.2, 0.5, 1.0)
+
+        assert resolution in allowed_resolutions, "Illegal resolution"
+
+        self.inst.write("RES {}".format(resolution))
 
     def set_VBW(self, VBW):
         pass
