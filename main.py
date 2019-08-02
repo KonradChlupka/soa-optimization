@@ -420,6 +420,11 @@ class AnritsuMS9740A:
         if res == [-1, -1, -1]:
             print("Warning: RMS Analysis failed")
         return res
+    
+    def capture_screen():
+        """commands: SSI ; *WAI ; DMA?
+        """
+        pass
 
     def close(self):
         """Close resource manager
