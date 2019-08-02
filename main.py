@@ -132,7 +132,7 @@ class Lightwave7900B:
         self.rm.close()
 
 class Lightwave3220:
-    def __init__(self, address=None):
+    def __init__(self, address=None, current_limit=None):
         """Initializes object to communicate with Lightwave3220
 
         If no address is specified, __init__ will look through all the
@@ -142,9 +142,11 @@ class Lightwave3220:
         Args:
             address (str): GPIB address of the device, e.g.
                 "GPIB1::1::INSTR"
+            current_limit (number): current limit in mA
         """
         # open resource manager
         self.rm = visa.ResourceManager()
+        self.current_limit = current_limit
 
         if address:
             addresses = [address]
@@ -180,6 +182,10 @@ class Lightwave3220:
         assert isinstance(current, int) or isinstance(current, float), "Current must be a number"
         assert isinstance(switch_output_on, bool), "switch_output_on must be a bool"
         assert current >= 0, "Current must be non-negative"
+
+        if self.current_limit:
+            assert current <= self.current_limit,
+                "Selected current exceeds current_limit, use can adjust it"
 
         # set output in mA
         self.inst.write("LAS:LDI {}".format(current))
