@@ -288,7 +288,7 @@ class AnritsuMS9740A:
         if center:
             assert center >= 600 and center <= 1750, "Parameter outside supported range"
         if span:
-            assert span >= 600 and span <= 1750, "Parameter outside supported range"
+            assert span > 0, "Parameter outside supported range"
         if start:
             assert start >= 600 and start <= 1750, "Parameter outside supported range"
         if stop:
