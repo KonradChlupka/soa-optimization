@@ -395,7 +395,10 @@ class AnritsuMS9740A:
                 factor, between 1.0 and 10.0
         
         returns:
-            TODO
+            List[float, float, float]:
+                center wavelength (nm)
+                spectrum width (nm)
+                standard deviation
         """
         assert isinstance(
             spectrum_level, (int, float)
@@ -409,10 +412,14 @@ class AnritsuMS9740A:
         assert (
             1.0 <= spectrum_deviation_factor <= 10.0
         ), "spectrum_deviation_factor must be between 1.0 and 10.0"
+
         self.inst.write(
             "ANA RMS,{},{}".format(spectrum_level, spectrum_deviation_factor)
         )
-        return self.inst.query("ANAR?")
+        res = self.inst.query("ANAR?").split()
+        if res == [-1, -1, -1]:
+            print("Warning: RMS Analysis failed")
+        return res
 
     def close(self):
         """Close resource manager
