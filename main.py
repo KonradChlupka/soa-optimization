@@ -366,7 +366,7 @@ class AnritsuMS9740A:
             "100KHZ",
             "1MHZ",
         )
-        assert type(VBW) is int or type(VBW) is str, "VBW must be int or str"
+        assert isinstance(VBW, (int, str)), "VBW must be int or str"
         assert VBW in allowed_VBW, "VBW must be one of the following: {}".format(
             allowed_VBW
         )
@@ -381,7 +381,7 @@ class AnritsuMS9740A:
                 numbers: 51|101|251|501|1001|2001|5001|10001|20001|50001
         """
         allowed_n = (51, 101, 251, 501, 1001, 2001, 5001, 10001, 20001, 50001)
-        assert type(n) is int, "Number of sampling points must be int"
+        assert isinstance(n, int), "Number of sampling points must be int"
         assert n in allowed_n, "VBW must be one of the following: {}".format(allowed_n)
 
         self.inst.write("MPT {}".format(n))
