@@ -314,9 +314,7 @@ class AnritsuMS9740A:
                 and 100
         """
         if db_per_div:
-            assert (
-                0.1 <= db_per_div <= 10
-            ), "Parameter outside supported range"
+            assert 0.1 <= db_per_div <= 10, "Parameter outside supported range"
         if ref:
             assert -100 <= ref <= 100, "Parameter outside supported range"
 
@@ -420,7 +418,7 @@ class AnritsuMS9740A:
         if res == [-1, -1, -1]:
             print("Warning: RMS Analysis failed")
         return res
-    
+
     def screen_capture(self):
         """Takes a single sweep of the screen content and returns
 
@@ -439,7 +437,46 @@ class AnritsuMS9740A:
         self.rm.close()
 
 
+class TektronixAWG7122B:
+    def __init__(self, address=None):
+        """Initializes object to communicate with Tektronix AWG7122B
+
+        If no address is specified, __init__ will look through all the
+        avaliable addresses to find the device, otherwise, it will check
+        only the supplied address.
+
+        Args:
+            address (str): GPIB address of the device, e.g.
+                "GPIB1::1::INSTR"
+        """
+        # open resource manager
+        self.rm = visa.ResourceManager()
+
+        if address:
+            addresses = [address]
+        else:
+            addresses = self.rm.list_resources()
+
+        print("Looking for Tektronix AWG7122B")
+        self.inst = None
+        for inst_str in addresses:
+            print("Checking resource at {}".format(inst_str))
+            try:
+                inst = self.rm.open_resource(inst_str)
+                query = inst.query("*IDN?")
+                if "TEKTRONIX,AWG7122B" in query:
+                    print("Found {}".format(query))
+                    self.inst = inst
+                    break
+            except Exception:
+                pass
+        if self.inst is None:
+            print("Couldn't find Tektronix AWG7122B")
+            self.inst = None
+
+
 if __name__ == "__main__":
     # laser = Lightwave7900B("GPIB1::2::INSTR")
     # current_source = Lightwave3220("GPIB1::12::INSTR")
-    osa = AnritsuMS9740A("GPIB1::3::INSTR")
+    # osa = AnritsuMS9740A("GPIB1::3::INSTR")
+    oawg = TektronixAWG7122B("GPIB1::1::INSTR")
