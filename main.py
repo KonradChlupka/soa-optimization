@@ -421,10 +421,17 @@ class AnritsuMS9740A:
             print("Warning: RMS Analysis failed")
         return res
     
-    def capture_screen():
-        """commands: SSI ; *WAI ; DMA?
+    def screen_capture(self):
+        """Takes a single sweep of the screen content and returns
+
+        returns:
+            List[float]: each number is a sample at a wavelength,
+                depending on set_x, and length depends on
+                set_sampling_points
         """
-        pass
+        self.inst.write("SSI; *WAI")
+        res = self.inst.query("DMA?")
+        return [float(i) for i in res.split()]
 
     def close(self):
         """Close resource manager
