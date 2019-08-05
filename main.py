@@ -315,7 +315,7 @@ class AnritsuMS9740A:
         """
         if db_per_div:
             assert (
-                0.1 <= db_per_div  <= 10
+                0.1 <= db_per_div <= 10
             ), "Parameter outside supported range"
         if ref:
             assert -100 <= ref <= 100, "Parameter outside supported range"
