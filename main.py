@@ -486,7 +486,16 @@ class TektronixAWG7122B:
         TODO: first run *rst and *cls
         TODO: allow for
         """
-        # assert all(isinstance(i, float) for i in signal), ""
+        assert all(
+            isinstance(i, float) for i in signal
+        ), "Signal must be a list of floats"
+        if not markers:
+            markers = [1] + [0] * (len(signal) - 1)
+        assert len(signal) == len(
+            markers
+        ), "Signal and markers must have the same length"
+        assert all(i == 0 or i == 1 for i in markers), "Marker can be 1 or 0 only"
+        assert isinstance(name, str), "Name must be a string"
 
 
 if __name__ == "__main__":
