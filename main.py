@@ -1,6 +1,8 @@
 import time
+import struct
 
 import visa
+import pyvisa.util
 import numpy as np
 
 
@@ -467,6 +469,10 @@ class TektronixAWG7122B:
                 if "TEKTRONIX,AWG7122B" in query:
                     print("Found {}".format(query))
                     self.inst = inst
+                    # set parameters necessary for binary data sending
+                    self.inst.read_termination = None
+                    self.inst.write_termination = "\r\n"
+                    self.inst.encoding = "utf-8"
                     break
             except Exception:
                 pass
@@ -474,9 +480,17 @@ class TektronixAWG7122B:
             print("Couldn't find Tektronix AWG7122B")
             self.inst = None
 
+    def send_waveform(self, name, signal, markers=None):
+        """
+        TODO: docstring
+        TODO: first run *rst and *cls
+        TODO: allow for
+        """
+        # assert all(isinstance(i, float) for i in signal), ""
+
 
 if __name__ == "__main__":
     # laser = Lightwave7900B("GPIB1::2::INSTR")
     # current_source = Lightwave3220("GPIB1::12::INSTR")
     # osa = AnritsuMS9740A("GPIB1::3::INSTR")
-    oawg = TektronixAWG7122B("GPIB1::1::INSTR")
+    awg = TektronixAWG7122B("GPIB1::1::INSTR")
