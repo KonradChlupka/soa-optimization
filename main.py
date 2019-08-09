@@ -507,6 +507,8 @@ class TektronixAWG7122B:
             isinstance(i, float) for i in signal
         ), "Signal must be a list of floats"
         assert all(-1 <= i <= 1 for i in signal), "Signal must be between -1 and 1"
+        if len(signal) > 100000:
+            print("Warning: signal length is very large, consider using a lower sampling_freq instead of long signal")
 
         # create marker if isn't supplied
         if not markers:
