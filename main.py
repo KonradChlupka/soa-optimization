@@ -553,6 +553,7 @@ class TektronixAWG7122B:
         self.inst.write_raw(
             'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
         )
+        self.inst.write("SOURce1:FREQuency {}".format(sampling_frequency))
         self.inst.write("SOURce1:VOLTage {}".format(amplitude))
         self.inst.write('SOURce1:WAVeform "{}"'.format(name))
         self.inst.write("OUTPut1 ON")
