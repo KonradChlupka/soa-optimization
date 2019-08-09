@@ -480,28 +480,54 @@ class TektronixAWG7122B:
             print("Couldn't find Tektronix AWG7122B")
             self.inst = None
 
-    def send_waveform(self, name, signal, markers=None):
-        """
-        TODO: docstring
-        TODO: first run *rst and *cls
-        TODO: allow for
+    def send_waveform(
+        self, signal, markers=None, sampling_freq=12e9, amplitude=1.0, name="konrad"
+    ):
+        """Sends a waveform to the device and turns channel 1 on
+
+        args:
+            signal (Any[float]): list of at least 1 float values, each
+                value must be between -1 and 1, where the max values are
+                equivalent to max set amplitude
+            markers (Any[int]): list of integers, either 0 or 1, which
+                will determine if the markers are high or low. For now,
+                this code supports setting both markers to the same
+                value only. Must be the same length as signal
+            sampling_freq (int): sampling frequency for the AWG.
+                Combined with the length of signal, it determines the
+                output signal frequency, i.e.
+                output_frequency = sampling_frequency/len(signal)
+                Must be between 10 MHz and 12 GHz
+            name (str): name of the waveform
+            amplitude (number): sets Vpp range of the signal. E.g. if
+                signal is [0.0, 1.0] and amplitude is 0.5, the output
+                signal will be [0.0 V, 0.25 V]
+        TODO: automatically set for selected channel and run
         """
         assert all(
             isinstance(i, float) for i in signal
         ), "Signal must be a list of floats"
+
         # create marker if isn't supplied
         if not markers:
             markers = [1] + [0] * (len(signal) - 1)
         assert len(signal) == len(
             markers
         ), "Signal and markers must have the same length"
+        assert all(isinstance(i, int) for i in markers), "Markers must be ints"
         assert all(i == 0 or i == 1 for i in markers), "Marker can be 1 or 0 only"
-        assert isinstance(name, str), "Name must be a string"
 
-        self.inst.write("*RST")
-        self.inst.write("*CLS")
+        assert isinstance(sampling_freq, int), "sampling_freq must be an integer"
+        assert (
+            10e6 <= sampling_freq <= 12e9
+        ), "sampling_freq must be between 10 MHz and 12 GHz"
 
-        # substitute 1 with 192 for both markers on (see AWG7220B docs)
+        assert isinstance(amplitude, (int, float)), "amplitude must be a number"
+        assert 0.5 <= amplitude <= 1.0, "amplitude must be between 0.5 and 1.0"
+
+        assert isinstance(name, str), "name must be a string"
+
+        # substitute 1 with 192 to set both markers on (see AWG7220B docs)
         markers = [192 * i for i in markers]
 
         n_points = len(signal)
@@ -519,13 +545,15 @@ class TektronixAWG7122B:
         # create format to parse combined_array into little-endian
         # byte format ("<fBfBfB...")
         fmt = "<" + "fB" * n_points
-
-        self.inst.write('WLISt:WAVeform:NEW "{}", {}, REAL'.format(name, n_points))
-
         byte_data_block = bytes(header, "utf-8") + struct.pack(fmt, *combined_array)
+
+        self.inst.write("*RST")
+        self.inst.write("*CLS")
+        self.inst.write('WLISt:WAVeform:NEW "{}", {}, REAL'.format(name, n_points))
         self.inst.write_raw(
             'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
         )
+        self.inst.write("SOURce1:VOLTage {}".format(amplitude))
 
 
 if __name__ == "__main__":
