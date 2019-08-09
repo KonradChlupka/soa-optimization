@@ -507,6 +507,7 @@ class TektronixAWG7122B:
         assert all(
             isinstance(i, float) for i in signal
         ), "Signal must be a list of floats"
+        assert all(-1 <= i <= 1 for i in signal), "Signal must be between -1 and 1"
 
         # create marker if isn't supplied
         if not markers:
