@@ -502,7 +502,7 @@ class TektronixAWG7122B:
             amplitude (number): sets Vpp range of the signal. E.g. if
                 signal is [0.0, 1.0] and amplitude is 0.5, the output
                 signal will be [0.0 V, 0.25 V]
-        TODO: automatically set for selected channel and run
+        TODO: at the end check for errors
         """
         assert all(
             isinstance(i, float) for i in signal
@@ -555,7 +555,7 @@ class TektronixAWG7122B:
             'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
         )
         self.inst.write("SOURce1:VOLTage {}".format(amplitude))
-        self.inst.write("SOURce1:WAVeform {}".format(name))
+        self.inst.write('SOURce1:WAVeform "{}"'.format(name))
         self.inst.write("SOURce1:OUTPut ON")
         self.inst.write("AWGControl:RUN")
         print(
