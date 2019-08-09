@@ -472,6 +472,7 @@ class TektronixAWG7122B:
                     self.inst.read_termination = None
                     self.inst.write_termination = "\r\n"
                     self.inst.encoding = "utf-8"
+                    self.inst.timeout = 10000
                     break
             except Exception:
                 pass
