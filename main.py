@@ -563,8 +563,8 @@ class TektronixAWG7122B:
             )
         )
 
-        def check_for_errors(self):
-            return self.inst.query("SYSTem:ERRor?")
+    def check_for_errors(self):
+        return self.inst.query("SYSTem:ERRor?")
 
 
 if __name__ == "__main__":
