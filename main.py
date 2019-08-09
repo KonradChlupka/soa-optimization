@@ -556,7 +556,7 @@ class TektronixAWG7122B:
         )
         self.inst.write("SOURce1:VOLTage {}".format(amplitude))
         self.inst.write('SOURce1:WAVeform "{}"'.format(name))
-        self.inst.write("SOURce1:OUTPut ON")
+        self.inst.write("OUTPut1 ON")
         self.inst.write("AWGControl:RUN")
         print(
             "Sampling frequency is {:.3e} and length of the signal is {:.3e}, so the output frequency is {:.3e}".format(
