@@ -547,6 +547,9 @@ class TektronixAWG7122B:
         fmt = "<" + "fB" * n_points
         byte_data_block = bytes(header, "utf-8") + struct.pack(fmt, *combined_array)
 
+        # waveform needs to be deleted first due to a bug on AWG
+        # (occurs when new waveform is shorter)
+        self.inst.write("WLISt:WAVeform:DELete ALL")
         self.inst.write("*RST")
         self.inst.write("*CLS")
         self.inst.write('WLISt:WAVeform:NEW "{}", {}, REAL'.format(name, n_points))
