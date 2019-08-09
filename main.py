@@ -517,7 +517,7 @@ class TektronixAWG7122B:
         assert all(isinstance(i, int) for i in markers), "Markers must be ints"
         assert all(i == 0 or i == 1 for i in markers), "Marker can be 1 or 0 only"
 
-        assert isinstance(sampling_freq, int), "sampling_freq must be an integer"
+        assert isinstance(sampling_freq, (int, float)), "sampling_freq must be a number"
         assert (
             10e6 <= sampling_freq <= 12e9
         ), "sampling_freq must be between 10 MHz and 12 GHz"
