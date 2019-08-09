@@ -554,6 +554,14 @@ class TektronixAWG7122B:
             'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
         )
         self.inst.write("SOURce1:VOLTage {}".format(amplitude))
+        self.inst.write("SOURce1:WAVeform {}".format(name))
+        self.inst.write("SOURce1:OUTPut ON")
+        self.inst.write("AWGControl:RUN")
+        print(
+            "Sampling frequency is {} and length of the signal is {}, so the output frequency is {}".format(
+                sampling_freq, n_points, sampling_freq / n_points
+            )
+        )
 
 
 if __name__ == "__main__":
