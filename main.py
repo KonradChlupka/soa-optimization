@@ -502,7 +502,6 @@ class TektronixAWG7122B:
             amplitude (number): sets Vpp range of the signal. E.g. if
                 signal is [0.0, 1.0] and amplitude is 0.5, the output
                 signal will be [0.0 V, 0.25 V]
-        TODO: at the end check for errors
         """
         assert all(
             isinstance(i, float) for i in signal
@@ -563,6 +562,9 @@ class TektronixAWG7122B:
                 sampling_freq, n_points, sampling_freq / n_points
             )
         )
+
+        def check_for_errors(self):
+            return self.inst.query("SYSTem:ERRor?")
 
 
 if __name__ == "__main__":
