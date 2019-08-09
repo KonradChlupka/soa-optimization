@@ -520,7 +520,7 @@ class TektronixAWG7122B:
         # byte format ("<fBfBfB...")
         fmt = "<" + "fB" * n_points
 
-        self.inst.write('WLISt:WAVeform:NEW "{}", {}, REAL'.format(n_points, name))
+        self.inst.write('WLISt:WAVeform:NEW "{}", {}, REAL'.format(name, n_points))
 
         byte_data_block = bytes(header, "utf-8") + struct.pack(fmt, *combined_array)
         self.inst.write_raw(
