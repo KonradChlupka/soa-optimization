@@ -489,6 +489,7 @@ class TektronixAWG7122B:
         assert all(
             isinstance(i, float) for i in signal
         ), "Signal must be a list of floats"
+        # create marker if isn't supplied
         if not markers:
             markers = [1] + [0] * (len(signal) - 1)
         assert len(signal) == len(
@@ -496,6 +497,35 @@ class TektronixAWG7122B:
         ), "Signal and markers must have the same length"
         assert all(i == 0 or i == 1 for i in markers), "Marker can be 1 or 0 only"
         assert isinstance(name, str), "Name must be a string"
+
+        self.inst.write("*RST")
+        self.inst.write("*CLS")
+
+        # substitute 1 with 192 for both markers on (see AWG7220B docs)
+        markers = [192 * i for i in markers]
+
+        n_points = len(signal)
+
+        # each point is 4 bytes for the float signal and 1 byte for the markers
+        n_bytes = 5 * n_points
+
+        # header as defined by the IEEE 488.2 standard
+        header = "#" + str(len(str(n_bytes))) + str(n_bytes)
+
+        # combine signal and marker as follows:
+        # [signal[0], marker[0], signal[1], marker[1], ...]
+        combined_array = [el for pair in zip(signal, markers) for el in pair]
+
+        # create format to parse combined_array into little-endian
+        # byte format ("<fBfBfB...")
+        fmt = "<" + "fB" * n_points
+
+        self.inst.write('WLISt:WAVeform:NEW "{}", {}, REAL'.format(n_points, name))
+
+        byte_data_block = bytes(header, "utf-8") + struct.pack(fmt, *combined_array)
+        self.inst.write_raw(
+            'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
+        )
 
 
 if __name__ == "__main__":
