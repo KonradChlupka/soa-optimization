@@ -2,7 +2,6 @@ import time
 import struct
 
 import visa
-import pyvisa.util
 import numpy as np
 
 
@@ -393,7 +392,7 @@ class AnritsuMS9740A:
             spectrum_level (number): in dB, between 0.1 and 50.0
             spectrum_deviation_factor (number): K: Standard deviation
                 factor, between 1.0 and 10.0
-        
+
         returns:
             List[float, float, float]:
                 center wavelength (nm)
@@ -553,7 +552,7 @@ class TektronixAWG7122B:
         self.inst.write_raw(
             'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
         )
-        self.inst.write("SOURce1:FREQuency {}".format(sampling_frequency))
+        self.inst.write("SOURce1:FREQuency {}".format(sampling_freq))
         self.inst.write("SOURce1:VOLTage {}".format(amplitude))
         self.inst.write('SOURce1:WAVeform "{}"'.format(name))
         self.inst.write("OUTPut1 ON")
