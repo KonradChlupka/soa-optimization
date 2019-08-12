@@ -134,8 +134,9 @@ class Lightwave7900B:
         self.inst.write("WAVE {}".format(wavelength))
 
     def close(self):
-        """Close resource manager
+        """Close instrument and resource manager
         """
+        self.inst.close()
         self.rm.close()
 
 
@@ -233,8 +234,9 @@ class Lightwave3220:
         self.inst.write("LAS:OUT 0")
 
     def close(self):
-        """Close resource manager
+        """Close instrument and resource manager
         """
+        self.inst.close()
         self.rm.close()
 
 
@@ -434,8 +436,9 @@ class AnritsuMS9740A:
         return [float(i) for i in res.split()]
 
     def close(self):
-        """Close resource manager
+        """Close instrument and resource manager
         """
+        self.inst.close()
         self.rm.close()
 
 
@@ -608,8 +611,9 @@ class TektronixAWG7122B:
         return self.inst.query("SYSTem:ERRor?")
 
     def close(self):
-        """Close resource manager
+        """Close instrument and resource manager
         """
+        self.inst.close()
         self.rm.close()
 
 
@@ -737,8 +741,9 @@ class Agilent8156A:
             time.sleep(seconds)
 
     def close(self):
-        """Close resource manager
+        """Close instrument and resource manager
         """
+        self.inst.close()
         self.rm.close()
 
 
