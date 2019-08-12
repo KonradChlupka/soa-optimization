@@ -637,6 +637,19 @@ class Agilent8156A:
         assert 1200 <= wavelength <= 1650, "wavelength must be between 1200 and 1650"
 
         self.inst.write("INPut:WAVelength {}nm".format(wavelength))
+    
+    def set_calibration_factor(self, calib=2.9):
+        """Sets the calibration factor for the instrument
+
+        args:
+            calib (number): calibration factor in dB (non-negative)
+        """
+        assert isinstance(calib, (int, float)), "calib must be a number"
+        assert calib >= 0, "calib must be non-negatice"
+
+        self.inst.write("INPut:OFFSet {}".format(wavelength))
+
+
 
 
 if __name__ == "__main__":
