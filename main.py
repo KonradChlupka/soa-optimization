@@ -742,5 +742,5 @@ if __name__ == "__main__":
     # laser = Lightwave7900B("GPIB1::2::INSTR")
     # current_source = Lightwave3220("GPIB1::12::INSTR")
     # osa = AnritsuMS9740A("GPIB1::3::INSTR")
-    # awg = TektronixAWG7122B("GPIB1::1::INSTR")
-    att = Agilent8156A("GPIB1::8::INSTR")
+    awg = TektronixAWG7122B("GPIB1::1::INSTR")
+    # att = Agilent8156A("GPIB1::8::INSTR")
