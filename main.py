@@ -563,9 +563,7 @@ class TektronixAWG7122B:
         # waveform needs to be deleted first due to a bug on AWG
         # (occurs when new waveform is shorter)
         print(
-            """If waveform {} already exists, it wil be deleted now.
-            If you want the same waveform on both channels,
-            you have to create it with different names.""".format(
+            """If waveform {} already exists, it wil be deleted now. If you want the same waveform on both channels, you have to create it with different names.""".format(
                 name
             )
         )
@@ -577,13 +575,14 @@ class TektronixAWG7122B:
         self.inst.write_raw(
             'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
         )
-        self.inst.write("SOURce{}:FREQuency {}".format(channel, sampling_freq))
+        # frequency is common for both channels
+        self.inst.write("SOURce1:FREQuency {}".format(sampling_freq))
         self.inst.write("SOURce{}:VOLTage {}".format(channel, amplitude))
         self.inst.write('SOURce{}:WAVeform "{}"'.format(channel, name))
         self.inst.write("OUTPut{} ON".format(channel))
         self.inst.write("AWGControl:RUN")
         print(
-            "Sampling frequency is {:.3e} and length of the signal is {:.3e}, so the output frequency is {:.3e}".format(
+            "Sampling frequency (common for both channels) is {:.3e} and length of the signal is {:.3e}, so the output frequency is {:.3e}".format(
                 sampling_freq, n_points, sampling_freq / n_points
             )
         )
