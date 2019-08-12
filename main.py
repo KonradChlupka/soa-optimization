@@ -562,7 +562,17 @@ class TektronixAWG7122B:
 
         # waveform needs to be deleted first due to a bug on AWG
         # (occurs when new waveform is shorter)
+        print(
+            """If waveform {} already exists, it wil be deleted now.
+            If you want the same waveform on both channels,
+            you have to create it with different names.""".format(
+                name
+            )
+        )
         self.inst.write('WLISt:WAVeform:DELete "{}"'.format(name))
+        # if waveform doesn't exist, above would produce an error
+        self.check_for_errors()
+
         self.inst.write('WLISt:WAVeform:NEW "{}", {}, REAL'.format(name, n_points))
         self.inst.write_raw(
             'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
