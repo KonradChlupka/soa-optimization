@@ -609,9 +609,21 @@ class Agilent8156A:
             print("Couldn't find Agilent 8156A")
             self.inst = None
 
+    def restore_defaults(self):
+        """Sends *CLS and *RST to the device, restoring most defaults
+
+        The *CLS command clears the following:
+        - error queue,
+        - standard event status register (ESR),
+        - status byte register (STB).
+        *RST clears most parameters apart from the GPIB settings.
+        """
+        self.inst.write("*CLS")
+        self.inst.write("*RST")
+
 if __name__ == "__main__":
     # laser = Lightwave7900B("GPIB1::2::INSTR")
     # current_source = Lightwave3220("GPIB1::12::INSTR")
     # osa = AnritsuMS9740A("GPIB1::3::INSTR")
-    awg = TektronixAWG7122B("GPIB1::1::INSTR")
+    # awg = TektronixAWG7122B("GPIB1::1::INSTR")
     att = Agilent8156A("GPIB1::8::INSTR")
