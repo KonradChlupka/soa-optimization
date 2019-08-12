@@ -563,7 +563,7 @@ class TektronixAWG7122B:
         # waveform needs to be deleted first due to a bug on AWG
         # (occurs when new waveform is shorter)
         print(
-            """If waveform {} already exists, it wil be deleted now. If you want the same waveform on both channels, you have to create it with different names.""".format(
+            """Warning: If waveform {} already exists, it wil be deleted now. If you want the same waveform on both channels, you have to create it with different names.""".format(
                 name
             )
         )
