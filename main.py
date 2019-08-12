@@ -637,29 +637,50 @@ class Agilent8156A:
         assert 1200 <= wavelength <= 1650, "wavelength must be between 1200 and 1650"
 
         self.inst.write("INPut:WAVelength {}nm".format(wavelength))
-    
+
     def set_calibration_factor(self, calib=2.9):
         """Sets the calibration factor for the instrument
 
         args:
-            calib (number): calibration factor in dB (non-negative)
+            calib (number): calibration factor in dB
         """
         assert isinstance(calib, (int, float)), "calib must be a number"
-        assert calib >= 0, "calib must be non-negatice"
 
         self.inst.write("INPut:OFFSet {}".format(calib))
+
+    def get_calibration_factor(self):
+        """Return the calibration factor
+
+        returns:
+            float: calibration factor in dB
+        """
+
+        return float(self.inst.query("INPut:OFFSet?").strip())
 
     def switch_output(self, state):
         """Opens or closes shutter
 
         args:
-            state(bool): True opens the shutter (laser goes through),
+            state (bool): True opens the shutter (laser goes through),
                 while False closes it (no light passes through)
         """
         assert isinstance(state, bool), "state must be a bool"
 
         self.inst.write("OUTPut:STATe {}".format(int(state)))
 
+    def set_output(self, attenuation):
+        """Sets the output attenuation
+
+        args:
+            attenuation (number): attenuation in dB, cannot be lower
+                than calibration_factor
+        """
+        assert isinstance(attenuation, (int, float)), "attenuation must be a number"
+        assert (
+            attenuation >= self.get_calibration_factor()
+        ), "attenuation cannot be lower than calibration_factor"
+        
+        self.inst.write("INPut:ATTenuation {}".format(attenuation))
 
 
 if __name__ == "__main__":
