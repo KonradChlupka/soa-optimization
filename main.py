@@ -669,7 +669,7 @@ class Agilent8156A:
         self.inst.write("OUTPut:STATe {}".format(int(state)))
 
     def set_output(self, attenuation):
-        """Sets the output attenuation
+        """Sets the output attenuation (without changing shutter)
 
         args:
             attenuation (number): attenuation in dB, cannot be lower
@@ -679,8 +679,24 @@ class Agilent8156A:
         assert (
             attenuation >= self.get_calibration_factor()
         ), "attenuation cannot be lower than calibration_factor"
-        
+
         self.inst.write("INPut:ATTenuation {}".format(attenuation))
+
+    def sweep(self, start, stop, step, seconds):
+        """Sweeps the attenuation
+
+        args:
+            start (number)
+            stop (number)
+            step (number): change between steps
+            seconds (number): delay between steps
+        """
+        self.set_output(start)
+        self.switch_output(True)
+
+        for level in np.arange(start, stop, step):
+            self.set_output(level)
+            time.sleep(seconds)
 
 
 if __name__ == "__main__":
