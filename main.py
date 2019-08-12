@@ -562,9 +562,7 @@ class TektronixAWG7122B:
 
         # waveform needs to be deleted first due to a bug on AWG
         # (occurs when new waveform is shorter)
-        self.inst.write("WLISt:WAVeform:DELete ALL")
-        self.inst.write("*RST")
-        self.inst.write("*CLS")
+        self.inst.write('WLISt:WAVeform:DELete "{}"'.format(name))
         self.inst.write('WLISt:WAVeform:NEW "{}", {}, REAL'.format(name, n_points))
         self.inst.write_raw(
             'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
@@ -579,6 +577,19 @@ class TektronixAWG7122B:
                 sampling_freq, n_points, sampling_freq / n_points
             )
         )
+
+    def restore_defaults(self):
+        """Sends *CLS and *RST to the device, restoring most defaults
+
+        The *CLS command clears the following:
+        - error queue,
+        - standard event status register (ESR),
+        - status byte register (STB).
+        *RST clears most parameters apart from the GPIB settings.
+        """
+        self.inst.write("WLISt:WAVeform:DELete ALL")
+        self.inst.write("*CLS")
+        self.inst.write("*RST")
 
     def check_for_errors(self):
         return self.inst.query("SYSTem:ERRor?")
