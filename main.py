@@ -647,8 +647,18 @@ class Agilent8156A:
         assert isinstance(calib, (int, float)), "calib must be a number"
         assert calib >= 0, "calib must be non-negatice"
 
-        self.inst.write("INPut:OFFSet {}".format(wavelength))
+        self.inst.write("INPut:OFFSet {}".format(calib))
 
+    def switch_output(self, state):
+        """Opens or closes shutter
+
+        args:
+            state(bool): True opens the shutter (laser goes through),
+                while False closes it (no light passes through)
+        """
+        assert isinstance(state, bool), "state must be a bool"
+
+        self.inst.write("OUTPut:STATe {}".format(int(state)))
 
 
 
