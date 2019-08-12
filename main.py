@@ -508,7 +508,9 @@ class TektronixAWG7122B:
         ), "Signal must be a list of floats"
         assert all(-1 <= i <= 1 for i in signal), "Signal must be between -1 and 1"
         if len(signal) > 100000:
-            print("Warning: signal length is very large, consider using a lower sampling_freq instead of long signal")
+            print(
+                "Warning: signal length is very large, consider using a lower sampling_freq instead of long signal"
+            )
 
         # create marker if isn't supplied
         if not markers:
@@ -572,6 +574,7 @@ class TektronixAWG7122B:
     def check_for_errors(self):
         return self.inst.query("SYSTem:ERRor?")
 
+
 class Agilent8156A:
     def __init__(self, address=None):
         """Initializes object to communicate with Agilent 8156A
@@ -620,6 +623,21 @@ class Agilent8156A:
         """
         self.inst.write("*CLS")
         self.inst.write("*RST")
+
+    def set_wavelength(self, wavelength):
+        """Sets the wavelength for the instrument
+        
+        The value is used to make the compensation for the wavelength
+        dependence of the filter, using the wavelength calibration data.
+
+        args:
+            wavelength (number): wavelength in nm (from 1200 to 1650)
+        """
+        assert isinstance(wavelength, (int, float)), "wavelength must be a number"
+        assert 1200 <= wavelength <= 1650, "wavelength must be between 1200 and 1650"
+
+        self.inst.write("INPut:WAVelength {}nm".format(wavelength))
+
 
 if __name__ == "__main__":
     # laser = Lightwave7900B("GPIB1::2::INSTR")
