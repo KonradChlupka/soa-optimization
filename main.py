@@ -481,9 +481,15 @@ class TektronixAWG7122B:
             self.inst = None
 
     def send_waveform(
-        self, signal, markers=None, sampling_freq=12e9, amplitude=1.0, name="konrad"
+        self,
+        signal,
+        markers=None,
+        sampling_freq=12e9,
+        amplitude=1.0,
+        channel=1,
+        name="konrad",
     ):
-        """Sends a waveform to the device and turns channel 1 on
+        """Sends a waveform to the device and turns on specified channel
 
         args:
             signal (Any[float]): list of at least 1 float values, each
@@ -529,6 +535,9 @@ class TektronixAWG7122B:
         assert isinstance(amplitude, (int, float)), "amplitude must be a number"
         assert 0.5 <= amplitude <= 1.0, "amplitude must be between 0.5 and 1.0"
 
+        assert channel in (1, 2), "channel must be 1 or 2"
+        assert isinstance(channel, int), "channel must be an in"
+
         assert isinstance(name, str), "name must be a string"
 
         # substitute 1 with 192 to set both markers on (see AWG7220B docs)
@@ -560,10 +569,10 @@ class TektronixAWG7122B:
         self.inst.write_raw(
             'WLISt:WAVeform:DATA "{}", '.format(name).encode("utf-8") + byte_data_block
         )
-        self.inst.write("SOURce1:FREQuency {}".format(sampling_freq))
-        self.inst.write("SOURce1:VOLTage {}".format(amplitude))
-        self.inst.write('SOURce1:WAVeform "{}"'.format(name))
-        self.inst.write("OUTPut1 ON")
+        self.inst.write("SOURce{}:FREQuency {}".format(channel, sampling_freq))
+        self.inst.write("SOURce{}:VOLTage {}".format(channel, amplitude))
+        self.inst.write('SOURce{}:WAVeform "{}"'.format(channel, name))
+        self.inst.write("OUTPut{} ON".format(channel))
         self.inst.write("AWGControl:RUN")
         print(
             "Sampling frequency is {:.3e} and length of the signal is {:.3e}, so the output frequency is {:.3e}".format(
