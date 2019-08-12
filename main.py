@@ -574,6 +574,11 @@ class TektronixAWG7122B:
     def check_for_errors(self):
         return self.inst.query("SYSTem:ERRor?")
 
+    def close(self):
+        """Close resource manager
+        """
+        self.rm.close()
+
 
 class Agilent8156A:
     def __init__(self, address=None):
@@ -697,6 +702,11 @@ class Agilent8156A:
         for level in np.arange(start, stop, step):
             self.set_output(float(level))
             time.sleep(seconds)
+
+    def close(self):
+        """Close resource manager
+        """
+        self.rm.close()
 
 
 if __name__ == "__main__":
