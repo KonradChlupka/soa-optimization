@@ -626,7 +626,7 @@ class Agilent8156A:
 
     def set_wavelength(self, wavelength):
         """Sets the wavelength for the instrument
-        
+
         The value is used to make the compensation for the wavelength
         dependence of the filter, using the wavelength calibration data.
 
@@ -695,7 +695,7 @@ class Agilent8156A:
         self.switch_output(True)
 
         for level in np.arange(start, stop, step):
-            self.set_output(level)
+            self.set_output(float(level))
             time.sleep(seconds)
 
 
