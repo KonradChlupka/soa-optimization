@@ -122,7 +122,8 @@ class Lightwave7900B:
 
         if (wavelength - default_wavelengths[channel - 1]) ** 2 > 9:
             print(
-                "Warning: you might be using a wavelength outside supported range, default is {} and you're using {}".format(
+                "Warning: you might be using a wavelength outside supported range, "
+                "default is {} and you're using {}".format(
                     default_wavelengths[channel - 1], wavelength
                 )
             )
@@ -515,7 +516,8 @@ class TektronixAWG7122B:
         assert all(-1 <= i <= 1 for i in signal), "Signal must be between -1 and 1"
         if len(signal) > 100000:
             print(
-                "Warning: signal length is very large, consider using a lower sampling_freq instead of long signal"
+                "Warning: signal length is very large, "
+                "consider using a lower sampling_freq instead of long signal"
             )
 
         # create marker if isn't supplied
@@ -563,9 +565,9 @@ class TektronixAWG7122B:
         # waveform needs to be deleted first due to a bug on AWG
         # (occurs when new waveform is shorter)
         print(
-            """Warning: If waveform {} already exists, it wil be deleted now. If you want the same waveform on both channels, you have to create it with different names.""".format(
-                name
-            )
+            "Warning: If waveform {} already exists, it wil be deleted now. "
+            "If you want the same waveform on both channels, "
+            "you have to create it with different names.".format(name)
         )
         self.inst.write('WLISt:WAVeform:DELete "{}"'.format(name))
         # if waveform doesn't exist, above would produce an error
@@ -582,7 +584,9 @@ class TektronixAWG7122B:
         self.inst.write("OUTPut{} ON".format(channel))
         self.inst.write("AWGControl:RUN")
         print(
-            "Sampling frequency (common for both channels) is {:.3e} and length of the signal is {:.3e}, so the output frequency is {:.3e}".format(
+            "Sampling frequency (common for both channels) is {:.3e} "
+            "and length of the signal is {:.3e}, "
+            "so the output frequency is {:.3e}".format(
                 sampling_freq, n_points, sampling_freq / n_points
             )
         )
