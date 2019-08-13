@@ -746,6 +746,7 @@ class Agilent8156A:
         self.inst.close()
         self.rm.close()
 
+
 class Agilent86100C:
     def __init__(self, address=None):
         """Initializes object to communicate with Agilent 86100C
@@ -782,6 +783,13 @@ class Agilent86100C:
         if self.inst is None:
             print("Couldn't find Agilent 86100C")
             self.inst = None
+
+    def close(self):
+        """Close instrument and resource manager
+        """
+        self.inst.close()
+        self.rm.close()
+
 
 if __name__ == "__main__":
     # laser = Lightwave7900B("GPIB1::2::INSTR")
