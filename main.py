@@ -793,6 +793,21 @@ class Agilent86100C:
         self.inst.write("*CLS")
         self.inst.write("*RST")
 
+    def autoscale(self):
+        """Evaluates the current input signal and autoscales
+
+        Autoscale sets the following:
+        • Channel Display, Scale, and Offset
+        • Trigger and Level
+        • Time Base Scale and Position
+        Autoscale turns off the following:
+        • Measurements on sources that are turned off
+        • Functions
+        • Windows
+        • Memories
+        """
+        self.inst.write("*AUToscale")
+
     def close(self):
         """Close instrument and resource manager
         """
