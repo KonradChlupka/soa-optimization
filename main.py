@@ -808,6 +808,24 @@ class Agilent86100C:
         """
         self.inst.write("*AUToscale")
 
+    def set_trigger(self, source="RMODule", level=10e-3):
+        """Sets parameters related to trigger
+
+        args:
+            source (str): one of FPANel, FRUN, LMODule, RMODule
+            level (number)
+        """
+        assert source in (
+            "FPANel",
+            "FRUN",
+            "LMODule",
+            "RMODule",
+        ), "Source must be one of FPANel, FRUN, LMODule, RMODule"
+        assert isinstance(level, (int, float)), "Level must be a number"
+
+        self.inst.write("TRIGger:SOURce {}".format(source))
+        self.inst.write("TRIGger:LEVel {}".format(level))
+
     def close(self):
         """Close instrument and resource manager
         """
