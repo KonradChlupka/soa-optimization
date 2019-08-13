@@ -746,10 +746,47 @@ class Agilent8156A:
         self.inst.close()
         self.rm.close()
 
+class Agilent86100C:
+    def __init__(self, address=None):
+        """Initializes object to communicate with Agilent 86100C
+
+        If no address is specified, __init__ will look through all the
+        avaliable addresses to find the device, otherwise, it will check
+        only the supplied address.
+
+        Args:
+            address (str): GPIB address of the device, e.g.
+                "GPIB1::1::INSTR"
+        """
+        # open resource manager
+        self.rm = visa.ResourceManager()
+
+        if address:
+            addresses = [address]
+        else:
+            addresses = self.rm.list_resources()
+
+        print("Looking for Agilent 86100C")
+        self.inst = None
+        for inst_str in addresses:
+            print("Checking resource at {}".format(inst_str))
+            try:
+                inst = self.rm.open_resource(inst_str)
+                query = inst.query("*IDN?")
+                if "Agilent Technologies,86100C" in query:
+                    print("Found {}".format(query))
+                    self.inst = inst
+                    break
+            except Exception:
+                pass
+        if self.inst is None:
+            print("Couldn't find Agilent 86100C")
+            self.inst = None
 
 if __name__ == "__main__":
     # laser = Lightwave7900B("GPIB1::2::INSTR")
     # current_source = Lightwave3220("GPIB1::12::INSTR")
     # osa = AnritsuMS9740A("GPIB1::3::INSTR")
-    awg = TektronixAWG7122B("GPIB1::1::INSTR")
+    # awg = TektronixAWG7122B("GPIB1::1::INSTR")
     # att = Agilent8156A("GPIB1::8::INSTR")
+    osc = Agilent86100C("GPIB1::7::INSTR")
