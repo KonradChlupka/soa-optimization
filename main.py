@@ -784,6 +784,15 @@ class Agilent86100C:
             print("Couldn't find Agilent 86100C")
             self.inst = None
 
+    def restore_defaults(self):
+        """Sends *CLS and *RST to the device, restoring most defaults
+
+        The *CLS clears all status and error registers
+        *RST clears most parameters apart from the GPIB settings.
+        """
+        self.inst.write("*CLS")
+        self.inst.write("*RST")
+
     def close(self):
         """Close instrument and resource manager
         """
