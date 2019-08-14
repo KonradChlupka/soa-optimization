@@ -923,13 +923,23 @@ class Agilent86100C:
             assert isinstance(range_, (int, float)), "range_ must be a number"
             self.inst.write("CHANnel{}:RANGe {}".format(channel, range_))
 
+    def measurement(self, channel=4):
+        """Makes a measurement on a selected channel.
 
+        args:
+            channel (int): Channel to make measurement on.
 
-    def measurement(self, source=4):
+        returns:
+            List[float]: list of values in volts, where:
+                “99.999E+36” represents a hole in the acquisition data,
+                “99.999E+33” represents a clipped-high level,
+                “99.999E+30” represents a clipped-low level.
         """
-        TODO
-        """
-        pass
+        assert isinstance(channel, int), "channel must be int"
+        assert channel in (1, 2, 3, 4), "channel must be 1, 2, 3, or 4"
+        self.inst.write("WAVeform:SOURce CHANnel{}".format(channel))
+
+        return [float(i) for i in self.inst.query("WAVeform:DATA?").split(",")]
 
     def close(self):
         """Close instrument and resource manager
