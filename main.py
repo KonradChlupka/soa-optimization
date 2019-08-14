@@ -839,28 +839,30 @@ class Agilent86100C:
                 TIMebase:REFerence command. The <position_value>
                 argument’s maximum value depends on the
                 time-per-division setting. Must be greater or equal
-                2.4e-9
+                2.4e-8
             range_ (number): Sets the full-scale horizontal time in
                 seconds. The range value is ten times the
                 time-per-division value. Range is always set in units of
                 time (seconds), not in bits. <full_scale_range> is the
                 full-scale horizontal time in seconds.
             reference (str): Sets the delay reference to the left or
-                center side of the display. Must be "LEFT" or "CENTer"
+                center side of the display. Must be "left" or "center"
         """
-        if position:
+        if position is not None:
             assert isinstance(position, (int, float)), "position must be a number"
-            assert position >= 2.4e-9, "position must be greater or equal 2.4e-9 s"
-
+            assert position >= 2.4e-8, "position must be greater or equal 2.4e-8 s"
             self.inst.write("TIMebase:POSition {}".format(position))
-        if range_:
+
+        if range_ is not None:
             assert isinstance(range_, (int, float)), "range_ must be a number"
             assert range_ >= 0, "range_ must be non-negative"
-
             self.inst.write("TIMebase:RANGe {}".format(range_))
-        if reference:
-            assert reference in ("LEFT", "CENTer")
 
+        if reference is not None:
+            assert reference.lower() in (
+                "left",
+                "center",
+            ), "reference must be left or center (capitalization optional)"
             self.inst.write("TIMebase:REFerence {}".format(reference))
 
     def set_acquire(self, average=None, count=None, points=None):
@@ -886,12 +888,12 @@ class Agilent86100C:
             assert isinstance(average, bool), "average must be a bool"
             self.inst.write("ACQuire:AVERage {}".format(int(average)))
 
-        if count:
+        if count is not None:
             assert isinstance(count, int), "count must be an int"
             assert 1 <= count <= 4096, "count must be between 1 and 4096"
             self.inst.write("ACQuire:COUNt {}".format(count))
 
-        if points:
+        if points is not None:
             assert isinstance(points, (int, str)), "points must be int or str"
             assert points == "AUTO" or (
                 16 <= points <= 16384
@@ -917,11 +919,11 @@ class Agilent86100C:
             assert isinstance(display, bool), "display must be bool"
             self.inst.write("CHANnel{}:DISPlay {}".format(channel, int(display)))
 
-        if offset:
+        if offset is not None:
             assert isinstance(offset, (int, float)), "offset must be a number"
             self.inst.write("CHANnel{}:OFFSet {}".format(channel, offset))
 
-        if range_:
+        if range_ is not None:
             assert isinstance(range_, (int, float)), "range_ must be a number"
             self.inst.write("CHANnel{}:RANGe {}".format(channel, range_))
 
