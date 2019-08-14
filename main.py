@@ -777,6 +777,7 @@ class Agilent86100C:
                 if "Agilent Technologies,86100C" in query:
                     print("Found {}".format(query))
                     self.inst = inst
+                    self.inst.timeout = 10000
                     self.inst.write("WAVeform:FORMat ASCii")
                     break
             except Exception:
