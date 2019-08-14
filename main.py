@@ -795,7 +795,7 @@ class Agilent86100C:
         self.inst.write("*RST")
 
     def autoscale(self):
-        """Evaluates the current input signal and autoscales
+        """Evaluates the current input signal, autoscales, prints result
 
         Autoscale sets the following:
         • Channel Display, Scale, and Offset
@@ -807,7 +807,8 @@ class Agilent86100C:
         • Windows
         • Memories
         """
-        self.inst.write("*AUToscale")
+        self.inst.write("AUToscale")
+        print(self.inst.query("AUToscale?"))
 
     def set_trigger(self, source="RMODule", level=10e-3):
         """Sets parameters related to trigger
