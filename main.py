@@ -777,6 +777,7 @@ class Agilent86100C:
                 if "Agilent Technologies,86100C" in query:
                     print("Found {}".format(query))
                     self.inst = inst
+                    self.inst.write("WAVeform:FORMat ASCii")
                     break
             except Exception:
                 pass
@@ -825,6 +826,38 @@ class Agilent86100C:
 
         self.inst.write("TRIGger:SOURce {}".format(source))
         self.inst.write("TRIGger:LEVel {}".format(level))
+
+    def set_timebase(self, position=None, range_=None, reference=None):
+        """Sets parameters related to timebase
+
+        args:
+            position (number): in seconds - Sets the time interval
+                between the trigger event and the delay reference point.
+                The delay reference point is set with the
+                TIMebase:REFerence command. The <position_value>
+                argument’s maximum value depends on the
+                time-per-division setting. Must be greater or equal
+                2.4e-9
+            range_ (number): Sets the full-scale horizontal time in
+                seconds. The range value is ten times the
+                time-per-division value. Range is always set in units of
+                time (seconds), not in bits. <full_scale_range> is the
+                full-scale horizontal time in seconds.
+            reference (str): Sets the delay reference to the left or
+                center side of the display. Must be "LEFT" or "CENTer"
+        """
+        assert isinstance(position, (int, float)), "position must be a number"
+        assert position >= 2.4e-9, "position must be greater or equal 2.4e-9 s"
+        assert isinstance(range_, (int, float)), "range_ must be a number"
+        assert position >= 0, "range_ must be non-negative"
+        assert reference in ("LEFT", "CENTer")
+
+        if position:
+            self.inst.write("TIMebase:POSition {}".format(position))
+        if range_:
+            self.inst.write("TIMebase:RANGe {}".format(range_))
+        if reference:
+            self.inst.write("TIMebase:REFerence {}".format(reference))
 
     def close(self):
         """Close instrument and resource manager
