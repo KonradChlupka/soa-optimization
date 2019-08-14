@@ -882,20 +882,54 @@ class Agilent86100C:
         """
         if average is not None:
             assert isinstance(average, bool), "average must be a bool"
-
             self.inst.write("ACQuire:AVERage {}".format(int(average)))
+
         if count:
             assert isinstance(count, int), "count must be an int"
             assert 1 <= count <= 4096, "count must be between 1 and 4096"
-
             self.inst.write("ACQuire:COUNt {}".format(count))
+
         if points:
             assert isinstance(points, (int, str)), "points must be int or str"
             assert points == "AUTO" or (
                 16 <= points <= 16384
             ), "points must be AUTO or int between 16 and 16384"
-
             self.inst.write("ACQuire:POINts {}".format(points))
+
+    def set_channel(self, channel=4, display=None, offset=None, range_=None):
+        """Sets parameters related to channels (and y-axis)
+
+        args:
+            channel (int): Channel to configure.
+            display (bool): Turns the display of the specified channel
+                on or off.
+            offset (number): Sets the voltage that is represented at the
+                center of the display for the selected channel.
+            range_ (number): Defines the full-scale vertical axis of the
+                selected channel in volts.
+        """
+        assert isinstance(channel, int), "Channel must be an int"
+        assert channel in (1, 2, 3, 4), "Channel must be 1, 2, 3, or 4"
+
+        if display is not None:
+            assert isinstance(display, bool), "display must be bool"
+            self.inst.write("CHANnel{}:DISPlay {}".format(channel, int(display)))
+
+        if offset:
+            assert isinstance(offset, (int, float)), "offset must be a number"
+            self.inst.write("CHANnel{}:OFFSet {}".format(channel, offset))
+
+        if range_:
+            assert isinstance(range_, (int, float)), "range_ must be a number"
+            self.inst.write("CHANnel{}:RANGe {}".format(channel, range_))
+
+
+
+    def measurement(self, source=4):
+        """
+        TODO
+        """
+        pass
 
     def close(self):
         """Close instrument and resource manager
