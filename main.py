@@ -945,6 +945,9 @@ class Agilent86100C:
 
         return [float(i) for i in self.inst.query("WAVeform:DATA?").split(",")]
 
+    def check_for_errors(self):
+        return self.inst.query("SYSTem:ERRor?")
+
     def close(self):
         """Close instrument and resource manager
         """
