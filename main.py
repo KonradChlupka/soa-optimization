@@ -958,12 +958,12 @@ class Agilent86100C:
 
 
 if __name__ == "__main__":
-    laser = Lightwave7900B("GPIB1::2::INSTR")
+    # laser = Lightwave7900B("GPIB1::2::INSTR")
     current_source = Lightwave3220("GPIB1::12::INSTR")
     osa = AnritsuMS9740A("GPIB1::3::INSTR")
-    awg = TektronixAWG7122B("GPIB1::1::INSTR")
+    # awg = TektronixAWG7122B("GPIB1::1::INSTR")
     att = Agilent8156A("GPIB1::8::INSTR")
-    osc = Agilent86100C("GPIB1::7::INSTR")
+    # osc = Agilent86100C("GPIB1::7::INSTR")
 
     current_values = range(0, 151, 5)
     attenuation_values = range(0, 51, 2)
@@ -976,6 +976,8 @@ if __name__ == "__main__":
     # turn on both devices
     current_source.set_output(0, switch_output_on=True)
     att.switch_output(True)
+    print("Starting experiment in 3 seconds...")
+    time.sleep(3)
 
     for current in current_values:
         current_source.set_output(current)
@@ -999,3 +1001,7 @@ if __name__ == "__main__":
 
     current_source.switch_off()
     att.switch_output(False)
+
+    current_source.close()
+    osa.close()
+    att.close()
