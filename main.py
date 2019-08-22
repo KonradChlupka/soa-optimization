@@ -983,9 +983,9 @@ if __name__ == "__main__":
         current_source.set_output(current)
         for attenuation in attenuation_values:
             att.set_output(attenuation)
+            time.sleep(1)
             print("Measuring for {} mA {} dB attenuation.".format(current, attenuation))
             results[(current, attenuation)] = osa.screen_capture()
-            time.sleep(0.5)
 
     # write to pickle
     p = open("soa_2019_08_22.pkl", "wb")
