@@ -967,8 +967,6 @@ if __name__ == "__main__":
 
     current_values = range(0, 151, 5)
     attenuation_values = range(0, 51, 2)
-    current_values = range(0, 151, 50)
-    attenuation_values = range(0, 51, 20)
 
     # results: {(current, attenuation): list_of_results}
     results = {}
