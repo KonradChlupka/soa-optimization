@@ -1,5 +1,7 @@
 import time
 import struct
+import pickle
+import csv
 
 import visa
 import numpy as np
@@ -962,3 +964,33 @@ if __name__ == "__main__":
     awg = TektronixAWG7122B("GPIB1::1::INSTR")
     att = Agilent8156A("GPIB1::8::INSTR")
     osc = Agilent86100C("GPIB1::7::INSTR")
+
+    current_values = range(0, 151, 5)
+    attenuation_values = range(0, 51, 2)
+    current_values = range(0, 151, 50)
+    attenuation_values = range(0, 51, 20)
+
+    # results: {(current, attenuation): list_of_results}
+    results = {}
+
+    for current in current_values:
+        current_source.set_output(current)
+        for attenuation in attenuation_values:
+            att.set_output(attenuation)
+            print("Measuring for {} mA {} dB attenuation.".format(current, attenuation))
+            results[(current, attenuation)] = osa.screen_capture()
+
+    # write to pickle
+    p = open("soa_2019_08_22.pkl", "wb")
+    pickle.dump(results, p)
+    p.close()
+
+    # write to CVS
+    c = open("soa_2019_08_22.csv", "w")
+    w = csv.writer(c)
+    for key, val in results.items():
+        w.writerow([key[0], key[1], val])
+    c.close()
+
+    current_source.switch_off()
+    att.switch_output(False)
