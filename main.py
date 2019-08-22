@@ -973,12 +973,17 @@ if __name__ == "__main__":
     # results: {(current, attenuation): list_of_results}
     results = {}
 
+    # turn on both devices
+    current_source.set_output(0, switch_output_on=True)
+    att.switch_output(True)
+
     for current in current_values:
         current_source.set_output(current)
         for attenuation in attenuation_values:
             att.set_output(attenuation)
             print("Measuring for {} mA {} dB attenuation.".format(current, attenuation))
             results[(current, attenuation)] = osa.screen_capture()
+            time.sleep(0.5)
 
     # write to pickle
     p = open("soa_2019_08_22.pkl", "wb")
@@ -989,7 +994,7 @@ if __name__ == "__main__":
     c = open("soa_2019_08_22.csv", "w")
     w = csv.writer(c)
     for key, val in results.items():
-        w.writerow([key[0], key[1], val])
+        w.writerow([key[0], key[1], *val])
     c.close()
 
     current_source.switch_off()
