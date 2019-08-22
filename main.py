@@ -993,7 +993,7 @@ if __name__ == "__main__":
     p.close()
 
     # write to CVS
-    c = open("soa_2019_08_22.csv", "w")
+    c = open("soa_2019_08_22.csv", "w", newline="")
     w = csv.writer(c)
     for key, val in results.items():
         w.writerow([key[0], key[1], *val])
@@ -1001,7 +1001,3 @@ if __name__ == "__main__":
 
     current_source.switch_off()
     att.switch_output(False)
-
-    current_source.close()
-    osa.close()
-    att.close()
