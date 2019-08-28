@@ -957,13 +957,19 @@ class Agilent86100C:
         self.rm.close()
 
 
-if __name__ == "__main__":
-    # laser = Lightwave7900B("GPIB1::2::INSTR")
+def experiment_1():
+    """Performs experiment 1
+
+    Sweeps current and attenuation, measures the output of SOA on the
+    OSA. Returns the results, as well as save as pickle and csv.
+
+    returns:
+        Dict[tuple[int, int]: List[float]]:
+            {(current, attenuation): list_of_results}
+    """
     current_source = Lightwave3220("GPIB1::12::INSTR")
     osa = AnritsuMS9740A("GPIB1::3::INSTR")
-    # awg = TektronixAWG7122B("GPIB1::1::INSTR")
     att = Agilent8156A("GPIB1::8::INSTR")
-    # osc = Agilent86100C("GPIB1::7::INSTR")
 
     current_values = range(0, 151, 5)
     attenuation_values = range(0, 51, 2)
@@ -982,16 +988,18 @@ if __name__ == "__main__":
         for attenuation in attenuation_values:
             att.set_output(attenuation)
             time.sleep(1)
-            print("Measuring for {:3} mA {:2} dB attenuation".format(current, attenuation))
+            print(
+                "Measuring for {:3} mA {:2} dB attenuation".format(current, attenuation)
+            )
             results[(current, attenuation)] = osa.screen_capture()
 
     # write to pickle
-    p = open("soa_2019_08_22.pkl", "wb")
+    p = open("experiment1.pkl", "wb")
     pickle.dump(results, p)
     p.close()
 
     # write to CVS
-    c = open("soa_2019_08_22.csv", "w", newline="")
+    c = open("experiment1.csv", "w", newline="")
     w = csv.writer(c)
     for key, val in results.items():
         w.writerow([key[0], key[1], *val])
@@ -999,3 +1007,15 @@ if __name__ == "__main__":
 
     current_source.switch_off()
     att.switch_output(False)
+
+    return results
+
+
+if __name__ == "__main__":
+    # laser = Lightwave7900B("GPIB1::2::INSTR")
+    # current_source = Lightwave3220("GPIB1::12::INSTR")
+    # osa = AnritsuMS9740A("GPIB1::3::INSTR")
+    # awg = TektronixAWG7122B("GPIB1::1::INSTR")
+    # att = Agilent8156A("GPIB1::8::INSTR")
+    # osc = Agilent86100C("GPIB1::7::INSTR")
+    pass
