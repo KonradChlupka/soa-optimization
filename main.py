@@ -963,14 +963,22 @@ class Experiment:
         pass
 
     def save_to_pickle(self, name):
-        """TODO: docu
+        """Saves self.results to a pickle file.
+
+        Args:
+            name (str): name to which the results should be saved,
+                without extension.
         """
         p = open(name + ".pkl", "wb")
         pickle.dump(self.results, p)
         p.close()
 
     def save_to_csv(self, name):
-        """TODO: docu
+        """Saves self.results to a csv file.
+
+        Args:
+            name (str): name to which the results should be saved,
+                without extension.
         """
         c = open(name + ".csv", "W", newline="")
         w = csv.writer(c)
@@ -985,7 +993,7 @@ class Experiment_1(Experiment):
 
         Initializes current source, optical spectrum analyzer, and
         the attenuator. Uses addresses from UCL CONNET lab. Edit source
-        code to change addresses.
+        code of this class to change addresses.
         """
         self.current_source = Lightwave3220("GPIB1::12::INSTR")
         self.osa = AnritsuMS9740A("GPIB1::3::INSTR")
@@ -994,9 +1002,15 @@ class Experiment_1(Experiment):
     def run(self, name):
         """Runs the experiment, saves the results.
 
-        The results are saved to csv, pickle, and self.results.
-            Sweeps current and attenuation, measures the output of SOA on the
-                OSA. Returns the results, as well as save as pickle and csv.
+        The results are saved to csv, pickle, and self.results in format
+        Dict[tuple[int, int]: List[float]]:
+        {(current, attenuation): list_of_results}. Sweeps current and
+        attenuation, measures the output of SOA on the OSA. Returns the
+        results, as well as save as pickle and csv.
+
+        Args:
+            name (str): name to which the results should be saved,
+                without extension.
         """
         current_values = range(0, 151, 5)
         attenuation_values = range(0, 51, 2)
@@ -1016,7 +1030,9 @@ class Experiment_1(Experiment):
                 self.att.set_output(attenuation)
                 time.sleep(1)
                 print(
-                    "Measuring for {:3} mA {:2} dB attenuation".format(current, attenuation)
+                    "Measuring for {:3} mA {:2} dB attenuation".format(
+                        current, attenuation
+                    )
                 )
                 self.results[(current, attenuation)] = self.osa.screen_capture()
 
@@ -1027,16 +1043,33 @@ class Experiment_1(Experiment):
         super().save_to_csv(name)
 
 
-def experiment_2():
-    """Performs experiment 2.
+class Experiment_2(Experiment):
+    def __init__(self):
+        """Initializes the devices needed in the experiment.
 
-    Sends a squarewave made up of 240 points, and 3 MISIC-like signals.
-    """
-    random.seed(0)
-    misic0 = [random.randint(0, 4) for i in range(240)]
-    misic1 = [random.randint(0, 4) for i in range(240)]
-    misic2 = [random.randint(0, 4) for i in range(240)]
-    pass
+        Initializes arbitrary function generator, and oscilloscope. Uses
+        addresses from UCL CONNET lab. Edit source code of this class to
+        change addresses.
+        """
+        self.awg = TektronixAWG7122B("GPIB1::1::INSTR")
+        self.osc = Agilent86100C("GPIB1::7::INSTR")
+
+    def run(self, name):
+        """Runs the experiment, saves the results.
+
+        Sends a squarewave made up of 240 points, and 3 MISIC-like
+        signals.
+        """
+        # create MISIC signals,
+        # then scale and duplicate each element
+        random.seed(0)
+        misic0 = [random.randint(0, 4) for i in range(120)]
+        misic0 = np.array([el / 4 for el in misic0 for _ in (0, 1)])
+        misic1 = [random.randint(0, 4) for i in range(120)]
+        misic1 = np.array([el / 4 for el in misic1 for _ in (0, 1)])
+        misic2 = [random.randint(0, 4) for i in range(120)]
+        misic2 = np.array([el / 4 for el in misic2 for _ in (0, 1)])
+        self.awg.send_waveform(misic0)
 
 
 if __name__ == "__main__":
@@ -1046,4 +1079,5 @@ if __name__ == "__main__":
     # awg = TektronixAWG7122B("GPIB1::1::INSTR")
     # att = Agilent8156A("GPIB1::8::INSTR")
     # osc = Agilent86100C("GPIB1::7::INSTR")
-    pass
+    ex2 = Experiment_2()
+    ex2.run('asdf')
