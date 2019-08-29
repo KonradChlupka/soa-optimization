@@ -979,46 +979,52 @@ class Experiment:
         c.close()
 
 
-def experiment_1():
-    """Performs experiment 1
+class Experiment_1(Experiment):
+    def __init__(self):
+        """Initializes the devices needed in the experiment.
 
-    Sweeps current and attenuation, measures the output of SOA on the
-    OSA. Returns the results, as well as save as pickle and csv.
+        Initializes current source, optical spectrum analyzer, and
+        the attenuator. Uses addresses from UCL CONNET lab. Edit source
+        code to change addresses.
+        """
+        self.current_source = Lightwave3220("GPIB1::12::INSTR")
+        self.osa = AnritsuMS9740A("GPIB1::3::INSTR")
+        self.att = Agilent8156A("GPIB1::8::INSTR")
 
-    returns:
-        Dict[tuple[int, int]: List[float]]:
-            {(current, attenuation): list_of_results}
-    """
-    current_source = Lightwave3220("GPIB1::12::INSTR")
-    osa = AnritsuMS9740A("GPIB1::3::INSTR")
-    att = Agilent8156A("GPIB1::8::INSTR")
+    def run(self, name):
+        """Runs the experiment, saves the results.
 
-    current_values = range(0, 151, 5)
-    attenuation_values = range(0, 51, 2)
+        The results are saved to csv, pickle, and self.results.
+            Sweeps current and attenuation, measures the output of SOA on the
+                OSA. Returns the results, as well as save as pickle and csv.
+        """
+        current_values = range(0, 151, 5)
+        attenuation_values = range(0, 51, 2)
 
-    # results: {(current, attenuation): list_of_results}
-    results = {}
+        # results: {(current, attenuation): list_of_results}
+        self.results = {}
 
-    # turn on both devices
-    current_source.set_output(0, switch_output_on=True)
-    att.switch_output(True)
-    print("Starting experiment in 3 seconds...")
-    time.sleep(3)
+        # turn on both devices
+        self.current_source.set_output(0, switch_output_on=True)
+        self.att.switch_output(True)
+        print("Starting experiment in 3 seconds...")
+        time.sleep(3)
 
-    for current in current_values:
-        current_source.set_output(current)
-        for attenuation in attenuation_values:
-            att.set_output(attenuation)
-            time.sleep(1)
-            print(
-                "Measuring for {:3} mA {:2} dB attenuation".format(current, attenuation)
-            )
-            results[(current, attenuation)] = osa.screen_capture()
+        for current in current_values:
+            self.current_source.set_output(current)
+            for attenuation in attenuation_values:
+                self.att.set_output(attenuation)
+                time.sleep(1)
+                print(
+                    "Measuring for {:3} mA {:2} dB attenuation".format(current, attenuation)
+                )
+                self.results[(current, attenuation)] = self.osa.screen_capture()
 
-    current_source.switch_off()
-    att.switch_output(False)
+        self.current_source.switch_off()
+        self.att.switch_output(False)
 
-    return results
+        super().save_to_pickle(name)
+        super().save_to_csv(name)
 
 
 def experiment_2():
