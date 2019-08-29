@@ -1057,19 +1057,15 @@ class Experiment_2(Experiment):
     def run(self, name):
         """Runs the experiment, saves the results.
 
-        Sends a squarewave made up of 240 points, and 3 MISIC-like
-        signals.
+        Sends a squarewave made of 240 points, and a MISIC-like signal.
         """
-        # create MISIC signals,
-        # then scale and duplicate each element
         random.seed(0)
-        misic0 = [random.randint(0, 4) for i in range(120)]
-        misic0 = np.array([el / 4 for el in misic0 for _ in (0, 1)])
-        misic1 = [random.randint(0, 4) for i in range(120)]
-        misic1 = np.array([el / 4 for el in misic1 for _ in (0, 1)])
-        misic2 = [random.randint(0, 4) for i in range(120)]
-        misic2 = np.array([el / 4 for el in misic2 for _ in (0, 1)])
-        self.awg.send_waveform(misic0)
+        # create MISIC signal
+        misic = [random.randint(0, 4) for i in range(120)]
+        # scale and duplicate each element
+        misic = np.array([el / 4 for el in misic for _ in (0, 1)])
+        square = 120 * np.array([0.]) + 120 * np.array([1.])
+        self.awg.send_waveform(square)
 
 
 if __name__ == "__main__":
