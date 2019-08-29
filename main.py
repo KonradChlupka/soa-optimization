@@ -1064,7 +1064,7 @@ class Experiment_2(Experiment):
         misic = [random.randint(0, 4) for i in range(120)]
         # scale and duplicate each element
         misic = np.array([el / 4 for el in misic for _ in (0, 1)])
-        square = 120 * np.array([0.]) + 120 * np.array([1.])
+        square = np.array([0.] * 120) + np.array([1.] * 120)
         self.awg.send_waveform(square)
 
 
