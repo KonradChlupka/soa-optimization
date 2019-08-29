@@ -2,6 +2,7 @@ import time
 import struct
 import pickle
 import csv
+import random
 
 import visa
 import numpy as np
@@ -957,6 +958,27 @@ class Agilent86100C:
         self.rm.close()
 
 
+class Experiment:
+    def __init__(self):
+        pass
+
+    def save_to_pickle(self, name):
+        """TODO: docu
+        """
+        p = open(name + ".pkl", "wb")
+        pickle.dump(self.results, p)
+        p.close()
+
+    def save_to_csv(self, name):
+        """TODO: docu
+        """
+        c = open(name + ".csv", "W", newline="")
+        w = csv.writer(c)
+        for key, val in self.results.items():
+            w.writerow([*key, *val])
+        c.close()
+
+
 def experiment_1():
     """Performs experiment 1
 
@@ -993,22 +1015,22 @@ def experiment_1():
             )
             results[(current, attenuation)] = osa.screen_capture()
 
-    # write to pickle
-    p = open("experiment1.pkl", "wb")
-    pickle.dump(results, p)
-    p.close()
-
-    # write to CVS
-    c = open("experiment1.csv", "w", newline="")
-    w = csv.writer(c)
-    for key, val in results.items():
-        w.writerow([key[0], key[1], *val])
-    c.close()
-
     current_source.switch_off()
     att.switch_output(False)
 
     return results
+
+
+def experiment_2():
+    """Performs experiment 2.
+
+    Sends a squarewave made up of 240 points, and 3 MISIC-like signals.
+    """
+    random.seed(0)
+    misic0 = [random.randint(0, 4) for i in range(240)]
+    misic1 = [random.randint(0, 4) for i in range(240)]
+    misic2 = [random.randint(0, 4) for i in range(240)]
+    pass
 
 
 if __name__ == "__main__":
