@@ -1177,6 +1177,7 @@ class Experiment_2(Experiment):
         Returns:
             int: Index offset between delayed and original.
         """
+        time.sleep(2)
         input(
             "Make sure the signals are positioned correctly for "
             "measurement. Refer to documentation of waveform_delay(). "
