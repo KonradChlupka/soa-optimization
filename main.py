@@ -1058,14 +1058,28 @@ class Experiment_2(Experiment):
         """Runs the experiment, saves the results.
 
         Sends a squarewave made of 240 points, and a MISIC-like signal.
+        The results are saved to csv, pickle, and self.results in format
+        TODO: correct docu
+        Dict[tuple[int, int]: List[float]]:
+        {(current, attenuation): list_of_results}. Sweeps current and
+        attenuation, measures the output of SOA on the OSA. Returns the
+        results, as well as save as pickle and csv.
+
+        Args:
+            name (str): name to which the results should be saved,
+                without extension.
         """
         random.seed(0)
         # create MISIC signal
         misic = [random.randint(0, 4) for i in range(120)]
         # scale and duplicate each element
         misic = np.array([el / 4 for el in misic for _ in (0, 1)])
-        square = np.array([0.] * 120 + [1.] * 120)
-        self.awg.send_waveform(square)
+        square = np.array([-1.0] * 120 + [1.0] * 120)
+
+        amplitude_multipliers = np.arange(0.05, 1.01, 0.05)
+
+        for amplitude_multiplier in amplitude_multipliers:
+            pass
 
 
 if __name__ == "__main__":
@@ -1076,4 +1090,4 @@ if __name__ == "__main__":
     # att = Agilent8156A("GPIB1::8::INSTR")
     # osc = Agilent86100C("GPIB1::7::INSTR")
     ex2 = Experiment_2()
-    ex2.run('asdf')
+    ex2.run("asdf")
