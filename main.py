@@ -1156,7 +1156,9 @@ class Experiment_2(Experiment):
 
             result = ["misic", mult, mean_square_error, "", *orig, "", *delayed]
             self.results.append(result)
-        self.save_to_csv("test")
+
+        self.save_to_csv("shf")
+        self.save_to_pickle("shf")
 
     def waveform_delay(self, original, delayed):
         """Calculates index delay between signals.
