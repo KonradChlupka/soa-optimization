@@ -1096,7 +1096,7 @@ class Experiment_2(Experiment):
         time_step = 30e-9 / 1350
 
         # get delay between signals
-        self.awg.send_waveform(square)
+        self.awg.send_waveform(square, suppress_messages=True)
         idx_delay = self.waveform_delay(
             self.osc.measurement(4), self.osc.measurement(2)
         )
@@ -1105,13 +1105,13 @@ class Experiment_2(Experiment):
 
         # loop through square signals of different amplitudes
         for mult in amplitude_multipliers:
-            self.awg.send_waveform(mult * square)
+            self.awg.send_waveform(mult * square, suppress_messages=True)
             orig = self.osc.measurement(4)
             delayed = self.osc.measurement(2)
 
             # align both signals (delayed is also flipped back)
             del orig[-idx_delay:]
-            del delayed[idx_delay:]
+            del delayed[len(delayed) - idx_delay:]
             orig = np.array(orig)
             delayed = -1 * np.array(delayed)
             print(len(orig))
