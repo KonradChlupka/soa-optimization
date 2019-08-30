@@ -985,7 +985,7 @@ class Experiment:
             name (str): name to which the results should be saved,
                 without extension.
         """
-        c = open(name + ".csv", "W", newline="")
+        c = open(name + ".csv", "w", newline="")
         w = csv.writer(c)
         if isinstance(self.results, dict):
             for key, val in self.results.items():
@@ -1080,7 +1080,8 @@ class Experiment_2(Experiment):
         """
         self.results = [
             [
-                "signal_type" "amplitude_multiplier",
+                "signal_type",
+                "amplitude_multiplier",
                 "direct_signal",
                 "amplifier_signal",
                 "mean_squared_error",
@@ -1110,6 +1111,7 @@ class Experiment_2(Experiment):
         # loop through square signals of different amplitudes
         for mult in amplitude_multipliers:
             self.awg.send_waveform(mult * square, suppress_messages=True)
+            time.sleep(1)
             orig = self.osc.measurement(4)
             delayed = self.osc.measurement(2)
 
