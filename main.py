@@ -1108,6 +1108,7 @@ class Experiment_2(Experiment):
 
         # loop through square signals of different amplitudes
         for mult in amplitude_multipliers:
+            print("Measuring for squarewave with multiplier {}".format(mult))
             self.awg.send_waveform(mult * square, suppress_messages=True)
             time.sleep(2.5)
             orig = self.osc.measurement(4)
@@ -1133,6 +1134,7 @@ class Experiment_2(Experiment):
 
         # loop through MISIC signals of different amplitudes
         for mult in amplitude_multipliers:
+            print("Measuring for misic with multiplier {}".format(mult))
             self.awg.send_waveform(mult * misic, suppress_messages=True)
             time.sleep(2.5)
             orig = self.osc.measurement(4)
