@@ -1111,7 +1111,7 @@ class Experiment_2(Experiment):
         # loop through square signals of different amplitudes
         for mult in amplitude_multipliers:
             self.awg.send_waveform(mult * square, suppress_messages=True)
-            time.sleep(1)
+            time.sleep(2.5)
             orig = self.osc.measurement(4)
             delayed = self.osc.measurement(2)
 
