@@ -1082,9 +1082,11 @@ class Experiment_2(Experiment):
             [
                 "signal_type",
                 "amplitude_multiplier",
-                "direct_signal",
-                "amplifier_signal",
                 "mean_squared_error",
+                "",
+                "direct_signal",
+                "...",
+                "amplifier_signal",
             ],
             [""],
         ]
@@ -1117,7 +1119,7 @@ class Experiment_2(Experiment):
 
             # align both signals (delayed is also flipped back)
             del orig[-idx_delay:]
-            del delayed[len(delayed) - idx_delay:]
+            delayed = delayed[idx_delay:]
             orig = np.array(orig)
             delayed = -1 * np.array(delayed)
 
@@ -1129,7 +1131,7 @@ class Experiment_2(Experiment):
 
             mean_square_error = np.mean((orig_norm - delayed_norm) ** 2)
 
-            result = ["square", mult, *orig, "", *delayed, "", mean_square_error]
+            result = ["square", mult, mean_square_error, "", *orig, "", *delayed]
             self.results.append(result)
         
         self.save_to_csv('test')
