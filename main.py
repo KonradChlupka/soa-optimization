@@ -1069,17 +1069,59 @@ class Experiment_2(Experiment):
             name (str): name to which the results should be saved,
                 without extension.
         """
+        self.results = [
+            [
+                "signal_type" "amplitude_multiplier",
+                "direct_signal",
+                "amplifier_signal",
+                "mean_squared_error",
+            ],
+            [""],
+        ]
+
+        # create MISIC and square signals
         random.seed(0)
-        # create MISIC signal
         misic = [random.randint(-2, 2) for i in range(60)]
-        # scale, center around zero, and multiply each element
         misic = np.array([el / 2 for el in misic for _ in range(4)])
         square = np.array([-1.0] * 120 + [1.0] * 120)
 
+        # setup oscilloscope for measurement
+        self.osc.set_acquire(points=1351)
+        self.osc.set_timebase(position=2.4e-8, range_=30e-9)
+        time_step = 30e-9 / 1350
+
+        # get delay between signals
+        self.awg.send_waveform(square)
+        idx_delay = self.waveform_delay(
+            self.osc.measurement(4), self.osc.measurement(2)
+        )
+
         amplitude_multipliers = np.arange(0.05, 1.01, 0.05)
 
-        for amplitude_multiplier in amplitude_multipliers:
-            pass
+        # loop through square signals of different amplitudes
+        for mult in amplitude_multipliers:
+            self.awg.send_waveform(mult * square)
+            orig = self.osc.measurement(4)
+            delayed = self.osc.measurement(2)
+
+            # align both signals (delayed is also flipped back)
+            del orig[-idx_delay:]
+            del delayed[idx_delay:]
+            orig = np.array(orig)
+            delayed = -1 * np.array(delayed)
+            print(len(orig))
+            print(len(delayed))
+
+            # normalize both signal
+            rms_orig = np.sqrt(np.mean(orig ** 2))
+            rms_delayed = np.sqrt(np.mean(delayed ** 2))
+            orig_norm = orig / rms_orig
+            delayed_norm = delayed / rms_delayed
+
+            mean_square_error = np.mean((orig_norm - delayed_norm) ** 2)
+
+            result = ["square", mult, *orig, "", *delayed, "", mean_square_error]
+            self.results.append(result)
 
     def waveform_delay(self, original, delayed):
         """Calculates index delay between signals.
