@@ -1067,12 +1067,8 @@ class Experiment_2(Experiment):
         """Runs the experiment, saves the results.
 
         Sends a squarewave made of 240 points, and a MISIC-like signal.
-        The results are saved to csv, pickle, and self.results in format
-        TODO: correct docu
-        Dict[tuple[int, int]: List[float]]:
-        {(current, attenuation): list_of_results}. Sweeps current and
-        attenuation, measures the output of SOA on the OSA. Returns the
-        results, as well as save as pickle and csv.
+        The results are saved to csv, pickle, and self.results as a
+        list. Sweeps the signal amplitude.
 
         Args:
             name (str): name to which the results should be saved,
@@ -1133,8 +1129,32 @@ class Experiment_2(Experiment):
 
             result = ["square", mult, mean_square_error, "", *orig, "", *delayed]
             self.results.append(result)
-        
-        self.save_to_csv('test')
+        self.results.append([""])
+
+        # loop through MISIC signals of different amplitudes
+        for mult in amplitude_multipliers:
+            self.awg.send_waveform(mult * misic, suppress_messages=True)
+            time.sleep(2.5)
+            orig = self.osc.measurement(4)
+            delayed = self.osc.measurement(2)
+
+            # align both signals (delayed is also flipped back)
+            del orig[-idx_delay:]
+            delayed = delayed[idx_delay:]
+            orig = np.array(orig)
+            delayed = -1 * np.array(delayed)
+
+            # normalize both signal
+            rms_orig = np.sqrt(np.mean(orig ** 2))
+            rms_delayed = np.sqrt(np.mean(delayed ** 2))
+            orig_norm = orig / rms_orig
+            delayed_norm = delayed / rms_delayed
+
+            mean_square_error = np.mean((orig_norm - delayed_norm) ** 2)
+
+            result = ["misic", mult, mean_square_error, "", *orig, "", *delayed]
+            self.results.append(result)
+        self.save_to_csv("test")
 
     def waveform_delay(self, original, delayed):
         """Calculates index delay between signals.
