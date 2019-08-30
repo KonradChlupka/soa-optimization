@@ -987,8 +987,12 @@ class Experiment:
         """
         c = open(name + ".csv", "W", newline="")
         w = csv.writer(c)
-        for key, val in self.results.items():
-            w.writerow([*key, *val])
+        if isinstance(self.results, dict):
+            for key, val in self.results.items():
+                w.writerow([*key, *val])
+        if isinstance(self.results, list):
+            for line in self.results:
+                w.writerow(*line)
         c.close()
 
 
@@ -1114,8 +1118,6 @@ class Experiment_2(Experiment):
             del delayed[len(delayed) - idx_delay:]
             orig = np.array(orig)
             delayed = -1 * np.array(delayed)
-            print(len(orig))
-            print(len(delayed))
 
             # normalize both signal
             rms_orig = np.sqrt(np.mean(orig ** 2))
@@ -1127,6 +1129,8 @@ class Experiment_2(Experiment):
 
             result = ["square", mult, *orig, "", *delayed, "", mean_square_error]
             self.results.append(result)
+        
+        self.save_to_csv('test')
 
     def waveform_delay(self, original, delayed):
         """Calculates index delay between signals.
