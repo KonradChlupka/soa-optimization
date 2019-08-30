@@ -1098,6 +1098,12 @@ class Experiment_2(Experiment):
         Returns:
             int: Index offset between delayed and original.
         """
+        input(
+            "Make sure the signals are positioned correctly for "
+            "measurement. Refer to documentation of waveform_delay(). "
+            "Press Enter..."
+        )
+
         on_top = False
         for idx, el in enumerate(original):
             if el > 0:
