@@ -1108,7 +1108,7 @@ class Experiment_2(Experiment):
 
         # loop through square signals of different amplitudes
         for mult in amplitude_multipliers:
-            print("Measuring for squarewave with multiplier {}".format(mult))
+            print("Measuring for square wave with multiplier {:.3}".format(mult))
             self.awg.send_waveform(mult * square, suppress_messages=True)
             time.sleep(2.5)
             orig = self.osc.measurement(4)
@@ -1134,7 +1134,7 @@ class Experiment_2(Experiment):
 
         # loop through MISIC signals of different amplitudes
         for mult in amplitude_multipliers:
-            print("Measuring for misic with multiplier {}".format(mult))
+            print("Measuring for misic with multiplier {:.3}".format(mult))
             self.awg.send_waveform(mult * misic, suppress_messages=True)
             time.sleep(2.5)
             orig = self.osc.measurement(4)
@@ -1204,7 +1204,9 @@ class Experiment_2(Experiment):
                 "the signal is compliant with requirements in "
                 "waveform_delay"
             )
-        return delayed_crossover_idx - orig_crossover_idx
+        delay = delayed_crossover_idx - orig_crossover_idx
+        print("Detected delay of {} points.".format(delay))
+        return delay
 
 
 if __name__ == "__main__":
