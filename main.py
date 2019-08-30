@@ -495,6 +495,7 @@ class TektronixAWG7122B:
         amplitude=1.0,
         channel=1,
         name="konrad",
+        suppress_messages=False,
     ):
         """Sends a waveform to the device and turns on specified channel
 
@@ -515,6 +516,8 @@ class TektronixAWG7122B:
             amplitude (number): sets Vpp range of the signal. E.g. if
                 signal is [0.0, 1.0] and amplitude is 0.5, the output
                 signal will be [0.0 V, 0.25 V]
+            suppress_messages (bool): If True, info and warning messages
+                will not be shown.
         """
         assert all(
             isinstance(i, float) for i in signal
@@ -570,11 +573,12 @@ class TektronixAWG7122B:
 
         # waveform needs to be deleted first due to a bug on AWG
         # (occurs when new waveform is shorter)
-        print(
-            "Warning: If waveform {} already exists, it wil be deleted now. "
-            "If you want the same waveform on both channels, "
-            "you have to create it with different names.".format(name)
-        )
+        if not suppress_messages:
+            print(
+                "Warning: If waveform {} already exists, it wil be"
+                "deleted now. If you want the same waveform on both"
+                "channels, you have to create it with different names.".format(name)
+            )
         self.inst.write('WLISt:WAVeform:DELete "{}"'.format(name))
         # if waveform doesn't exist, above would produce an error
         self.check_for_errors()
@@ -589,13 +593,14 @@ class TektronixAWG7122B:
         self.inst.write('SOURce{}:WAVeform "{}"'.format(channel, name))
         self.inst.write("OUTPut{} ON".format(channel))
         self.inst.write("AWGControl:RUN")
-        print(
-            "Sampling frequency (common for both channels) is {:.3e} "
-            "and length of the signal is {:.3e}, "
-            "so the output frequency is {:.3e}".format(
-                sampling_freq, n_points, sampling_freq / n_points
+        if not suppress_messages:
+            print(
+                "Sampling frequency (common for both channels) is "
+                "{:.3e} and length of the signal is {:.3e}, "
+                "so the output frequency is {:.3e}".format(
+                    sampling_freq, n_points, sampling_freq / n_points
+                )
             )
-        )
 
     def restore_defaults(self):
         """Sends *CLS and *RST to the device, restoring most defaults
