@@ -992,7 +992,7 @@ class Experiment:
                 w.writerow([*key, *val])
         if isinstance(self.results, list):
             for line in self.results:
-                w.writerow(*line)
+                w.writerow([*line])
         c.close()
 
 
