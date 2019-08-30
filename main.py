@@ -1071,15 +1071,46 @@ class Experiment_2(Experiment):
         """
         random.seed(0)
         # create MISIC signal
-        misic = [random.randint(0, 4) for i in range(120)]
-        # scale and duplicate each element
-        misic = np.array([el / 4 for el in misic for _ in (0, 1)])
+        misic = [random.randint(-2, 2) for i in range(60)]
+        # scale, center around zero, and multiply each element
+        misic = np.array([el / 2 for el in misic for _ in range(4)])
         square = np.array([-1.0] * 120 + [1.0] * 120)
 
         amplitude_multipliers = np.arange(0.05, 1.01, 0.05)
 
         for amplitude_multiplier in amplitude_multipliers:
             pass
+
+    def waveform_delay(self, original, delayed):
+        """TODO
+        assumptions: delayed is inverted
+        requirements: falling edge of both signals is visible, at least
+        one full period of each is visible, sending a square wave
+        (-1 to 1), rising edge of original is very close to left edge
+        of the screen
+        """
+        on_top = False
+        for idx, el in enumerate(original):
+            if el > 0:
+                on_top = True
+            if el < 0 and on_top is True:
+                orig_crossover_idx = idx
+
+        # invert signal
+        delayed = -1 * np.array(delayed)
+        for idx, el in enumerate(delayed):
+            if el > 0:
+                on_top = True
+            if el < 0 and on_top is True:
+                delayed_crossover_idx = idx
+
+        if orig_crossover_idx > delayed_crossover_idx:
+            raise ValueError(
+                "Delayed signal seems to be before original, check if "
+                "the signal is compliant with requirements in "
+                "waveform_delay"
+            )
+        return delayed_crossover_idx - orig_crossover_idx
 
 
 if __name__ == "__main__":
