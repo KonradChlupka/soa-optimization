@@ -1082,12 +1082,15 @@ class Experiment_2(Experiment):
             pass
 
     def waveform_delay(self, original, delayed):
-        """TODO
-        assumptions: delayed is inverted
-        requirements: falling edge of both signals is visible, at least
-        one full period of each is visible, sending a square wave
-        (-1 to 1), rising edge of original is very close to left edge
-        of the screen
+        """Calculates index delay between signals
+
+        Requires that 'delayed' is the same signal as 'original' (or
+        slightly changed due to ringing etc.), 'delayed' is inverted,
+        falling edge of both signals is visible, at least one full
+        period of each is visible, a centered square wave from -1 to 1
+        is sent, and 'original' on the left side of the screen is high
+        and close to the falling edge.
+        TODO
         """
         on_top = False
         for idx, el in enumerate(original):
@@ -1096,6 +1099,7 @@ class Experiment_2(Experiment):
             if el < 0 and on_top is True:
                 orig_crossover_idx = idx
 
+        on_top = False
         # invert signal
         delayed = -1 * np.array(delayed)
         for idx, el in enumerate(delayed):
