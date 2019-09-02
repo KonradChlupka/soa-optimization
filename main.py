@@ -1146,7 +1146,7 @@ class Experiment_2(Experiment):
         # setup oscilloscope for measurement
         self.osc.set_acquire(points=1351)
         self.osc.set_timebase(position=2.4e-8, range_=30e-9)
-        time_step = 30e-9 / 1350
+        # time_step = 30e-9 / 1351
 
         # get delay between signals
         self.awg.send_waveform(square, suppress_messages=True)
@@ -1212,6 +1212,114 @@ class Experiment_2(Experiment):
         self.save_to_pickle(name)
 
 
+class Experiment_3:
+    def __init__(self):
+        """Initializes the devices needed in the experiment.
+
+        Initializes arbitrary function generator, oscilloscope, and
+        current source. Uses addresses from UCL CONNET lab. Edit source
+        code of this class to change addresses.
+        """
+        self.awg = TektronixAWG7122B("GPIB1::1::INSTR")
+        self.osc = Agilent86100C("GPIB1::7::INSTR").set
+        self.current_source = Lightwave3220("GPIB1::12::INSTR", current_limit=100)
+
+    def run(self, name):
+        """Runs the experiment, saves the results.
+
+        Sends a squarewave made of 240 points, and a MISIC-like signal.
+        Measures them as an average of 100 points and also individually.
+        The results are saved to csv, pickle, and self.results as a
+        list. Sweeps the bias current.
+
+        Args:
+            name (str): name to which the results should be saved,
+                without extension.
+        """
+        self.results = [
+            [
+                "signal_type",
+                "bias_current",
+                "n_average",
+                "mean_squared_error",
+                "",
+                "direct_signal",
+                "...",
+                "amplifier_signal",
+            ],
+            [""],
+        ]
+
+        # create MISIC and square signals
+        signal_names = ["square", "MISIC"]
+        random.seed(0)
+        misic = [random.randint(-2, 2) for i in range(60)]
+        misic = np.array([el / 2 for el in misic for _ in range(4)])
+        square = np.array([-1.0] * 120 + [1.0] * 120)
+
+        # setup oscilloscope for measurement
+        self.osc.set_acquire(average=False, count=100, points=1351)
+        self.osc.set_timebase(position=2.4e-8, range_=30e-9)
+        # time_step = 30e-9 / 1351
+
+        # get delay between signals
+        self.awg.send_waveform(square, suppress_messages=True)
+        time.sleep(2.5)
+        idx_delay = super().waveform_delay(
+            self.osc.measurement(4), self.osc.measurement(2)
+        )
+
+        bias_currents = range(50, 101, 5)
+
+        for (signal_name, signal_type) in zip(signal_names, (square, misic)):
+            for average in (False, True):
+                self.osc.set_acquire(average=average)
+                for current in bias_currents:
+                    print(
+                        "Measuring for {} wave with bias current {}".format(
+                            signal_name, bias_currents
+                        )
+                    )
+                    self.awg.send_waveform(signal_type, suppress_messages=True)
+                    if average:
+                        time.sleep(3.5)
+                    else:
+                        time.sleep(2.5)
+                    orig = self.osc.measurement(4)
+                    delayed = self.osc.measurement(1)
+
+                    # align both signals (delayed is also flipped back)
+                    del orig[-idx_delay:]
+                    delayed = delayed[idx_delay:]
+                    orig = np.array(orig)
+                    delayed = -1 * np.array(delayed)
+
+                    # normalize both signal
+                    rms_orig = np.sqrt(np.mean(orig ** 2))
+                    rms_delayed = np.sqrt(np.mean(delayed ** 2))
+                    orig_norm = orig / rms_orig
+                    delayed_norm = delayed / rms_delayed
+
+                    mean_square_error = np.mean((orig_norm - delayed_norm) ** 2)
+
+                    result = [
+                        "{}".format(signal_name),
+                        current,
+                        int(average) * 99 + 1,  # number of points for measurement
+                        mean_square_error,
+                        "",
+                        *orig,
+                        "",
+                        *delayed,
+                    ]
+                    self.results.append(result)
+                self.results.append([""])
+            self.results.append([""])
+
+        self.save_to_csv(name)
+        self.save_to_pickle(name)
+
+
 if __name__ == "__main__":
     # laser = Lightwave7900B("GPIB1::2::INSTR")
     # current_source = Lightwave3220("GPIB1::12::INSTR")
@@ -1219,5 +1327,5 @@ if __name__ == "__main__":
     # awg = TektronixAWG7122B("GPIB1::1::INSTR")
     # att = Agilent8156A("GPIB1::8::INSTR")
     # osc = Agilent86100C("GPIB1::7::INSTR")
-    ex2 = Experiment_2()
-    ex2.run("asdf")
+    ex3 = Experiment_3()
+    ex3.run("test")
