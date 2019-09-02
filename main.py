@@ -967,6 +967,56 @@ class Experiment:
     def __init__(self):
         pass
 
+    def waveform_delay(self, original, delayed):
+        """Calculates index delay between signals.
+
+        Requires that 'delayed' is the same signal as 'original' (or
+        slightly changed due to ringing etc.), 'delayed' is inverted,
+        falling edge of both signals is visible, at least one full
+        period of each is visible, a centered square wave from -1 to 1
+        is sent, and 'original' on the left side of the screen is high
+        and close to the falling edge.
+
+        Args:
+            original (List or np.array)
+            delayed (List or np.array)
+
+        Returns:
+            int: Index offset between delayed and original.
+        """
+        input(
+            "Make sure the signals are positioned correctly for "
+            "measurement. Refer to documentation of waveform_delay(). "
+            "Press Enter..."
+        )
+
+        on_top = False
+        for idx, el in enumerate(original):
+            if el > 0:
+                on_top = True
+            if el < 0 and on_top is True:
+                orig_crossover_idx = idx
+                break
+
+        on_top = False
+        delayed = -1 * np.array(delayed)
+        for idx, el in enumerate(delayed):
+            if el > 0:
+                on_top = True
+            if el < 0 and on_top is True:
+                delayed_crossover_idx = idx
+                break
+
+        if orig_crossover_idx > delayed_crossover_idx:
+            raise ValueError(
+                "Delayed signal seems to be before original, check if "
+                "the signal is compliant with requirements in "
+                "waveform_delay"
+            )
+        delay = delayed_crossover_idx - orig_crossover_idx
+        print("Detected delay of {} points.".format(delay))
+        return delay
+
     def save_to_pickle(self, name):
         """Saves self.results to a pickle file.
 
@@ -1100,7 +1150,8 @@ class Experiment_2(Experiment):
 
         # get delay between signals
         self.awg.send_waveform(square, suppress_messages=True)
-        idx_delay = self.waveform_delay(
+        time.sleep(2.5)
+        idx_delay = super().waveform_delay(
             self.osc.measurement(4), self.osc.measurement(2)
         )
 
@@ -1157,59 +1208,8 @@ class Experiment_2(Experiment):
             result = ["misic", mult, mean_square_error, "", *orig, "", *delayed]
             self.results.append(result)
 
-        self.save_to_csv("shf")
-        self.save_to_pickle("shf")
-
-    def waveform_delay(self, original, delayed):
-        """Calculates index delay between signals.
-
-        Requires that 'delayed' is the same signal as 'original' (or
-        slightly changed due to ringing etc.), 'delayed' is inverted,
-        falling edge of both signals is visible, at least one full
-        period of each is visible, a centered square wave from -1 to 1
-        is sent, and 'original' on the left side of the screen is high
-        and close to the falling edge.
-
-        Args:
-            original (List or np.array)
-            delayed (List or np.array)
-        
-        Returns:
-            int: Index offset between delayed and original.
-        """
-        time.sleep(2)
-        input(
-            "Make sure the signals are positioned correctly for "
-            "measurement. Refer to documentation of waveform_delay(). "
-            "Press Enter..."
-        )
-
-        on_top = False
-        for idx, el in enumerate(original):
-            if el > 0:
-                on_top = True
-            if el < 0 and on_top is True:
-                orig_crossover_idx = idx
-                break
-
-        on_top = False
-        delayed = -1 * np.array(delayed)
-        for idx, el in enumerate(delayed):
-            if el > 0:
-                on_top = True
-            if el < 0 and on_top is True:
-                delayed_crossover_idx = idx
-                break
-
-        if orig_crossover_idx > delayed_crossover_idx:
-            raise ValueError(
-                "Delayed signal seems to be before original, check if "
-                "the signal is compliant with requirements in "
-                "waveform_delay"
-            )
-        delay = delayed_crossover_idx - orig_crossover_idx
-        print("Detected delay of {} points.".format(delay))
-        return delay
+        self.save_to_csv(name)
+        self.save_to_pickle(name)
 
 
 if __name__ == "__main__":
