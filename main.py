@@ -1212,6 +1212,7 @@ class Experiment_2(Experiment):
         self.save_to_pickle(name)
 
 
+# TODO: do something about signal not around 0
 class Experiment_3(Experiment):
     def __init__(self):
         """Initializes the devices needed in the experiment.
@@ -1265,9 +1266,10 @@ class Experiment_3(Experiment):
         # get delay between signals
         self.awg.send_waveform(square, suppress_messages=True)
         time.sleep(2.5)
-        idx_delay = super().waveform_delay(
-            self.osc.measurement(4), self.osc.measurement(2)
-        )
+        orig = self.osc.measurement(4)
+        delayed = np.array(self.osc.measurement(1))
+        delayed = delayed - np.mean(delayed)
+        idx_delay = super().waveform_delay(orig, delayed)
 
         bias_currents = range(50, 101, 5)
 
@@ -1277,16 +1279,17 @@ class Experiment_3(Experiment):
                 for current in bias_currents:
                     print(
                         "Measuring for {} wave with bias current {}".format(
-                            signal_name, bias_currents
+                            signal_name, current
                         )
                     )
                     self.awg.send_waveform(signal_type, suppress_messages=True)
                     if average:
-                        time.sleep(3.5)
+                        time.sleep(6)
                     else:
                         time.sleep(2.5)
                     orig = self.osc.measurement(4)
-                    delayed = self.osc.measurement(1)
+                    delayed = np.array(self.osc.measurement(1))
+                    delayed = delayed - np.mean(delayed)
 
                     # align both signals (delayed is also flipped back)
                     del orig[-idx_delay:]
