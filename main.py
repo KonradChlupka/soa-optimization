@@ -1221,7 +1221,7 @@ class Experiment_3:
         code of this class to change addresses.
         """
         self.awg = TektronixAWG7122B("GPIB1::1::INSTR")
-        self.osc = Agilent86100C("GPIB1::7::INSTR").set
+        self.osc = Agilent86100C("GPIB1::7::INSTR")
         self.current_source = Lightwave3220("GPIB1::12::INSTR", current_limit=100)
 
     def run(self, name):
