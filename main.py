@@ -1212,7 +1212,7 @@ class Experiment_2(Experiment):
         self.save_to_pickle(name)
 
 
-class Experiment_3:
+class Experiment_3(Experiment):
     def __init__(self):
         """Initializes the devices needed in the experiment.
 
