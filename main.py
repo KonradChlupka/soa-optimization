@@ -1225,6 +1225,7 @@ class Experiment_3(Experiment):
         self.awg = TektronixAWG7122B("GPIB1::1::INSTR")
         self.osc = Agilent86100C("GPIB1::7::INSTR")
         self.current_source = Lightwave3220("GPIB1::12::INSTR", current_limit=100)
+        self.att = Agilent8156A("GPIB1::8::INSTR")
 
     def run(self, name):
         """Runs the experiment, saves the results.
@@ -1232,7 +1233,7 @@ class Experiment_3(Experiment):
         Sends a squarewave made of 240 points, and a MISIC-like signal.
         Measures them as an average of 100 points and also individually.
         The results are saved to csv, pickle, and self.results as a
-        list. Sweeps the bias current.
+        list. Sweeps the bias current and attenuation.
 
         Args:
             name (str): name to which the results should be saved,
@@ -1268,7 +1269,7 @@ class Experiment_3(Experiment):
         # get delay between signals
         self.current_source.set_output(75)
         self.awg.send_waveform(square, suppress_messages=True)
-        time.sleep(10)
+        time.sleep(5)
         orig = self.osc.measurement(4)
         delayed = np.array(self.osc.measurement(1))
         delayed = delayed - np.mean(delayed)
@@ -1283,6 +1284,7 @@ class Experiment_3(Experiment):
                 for current in bias_currents:
                     self.current_source.set_output(current)
                     for attenuation in attenuation_values:
+                        self.att.set_output(attenuation)
                         print(
                             "Measuring for {} wave with bias current {}, average set "
                             "to {}, and attenuation of {}".format(
@@ -1291,7 +1293,7 @@ class Experiment_3(Experiment):
                         )
                         self.awg.send_waveform(signal_type, suppress_messages=True)
                         if average:
-                            time.sleep(10)
+                            time.sleep(5)
                         else:
                             time.sleep(2.5)
                         orig = self.osc.measurement(4)
