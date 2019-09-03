@@ -1341,5 +1341,5 @@ if __name__ == "__main__":
     # awg = TektronixAWG7122B("GPIB1::1::INSTR")
     # att = Agilent8156A("GPIB1::8::INSTR")
     # osc = Agilent86100C("GPIB1::7::INSTR")
-    ex3 = Experiment_3()
-    ex3.run("test")
+    ex2 = Experiment_2()
+    ex2.run("shf_cpp")
