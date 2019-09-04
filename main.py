@@ -1212,8 +1212,6 @@ class Experiment_2(Experiment):
         self.save_to_pickle(name)
 
 
-# TODO: do something about signal not around 0
-# TODO: sweep laser too
 class Experiment_3(Experiment):
     def __init__(self):
         """Initializes the devices needed in the experiment.
@@ -1242,8 +1240,8 @@ class Experiment_3(Experiment):
         self.results = [
             [
                 "signal_type",
-                "bias_current",
                 "n_average",
+                "bias_current",
                 "attenuation",
                 "mean_squared_error",
                 "",
@@ -1269,14 +1267,14 @@ class Experiment_3(Experiment):
         # get delay between signals
         self.current_source.set_output(75)
         self.awg.send_waveform(square, suppress_messages=True)
-        time.sleep(5)
+        time.sleep(6)
         orig = self.osc.measurement(4)
         delayed = np.array(self.osc.measurement(1))
         delayed = delayed - np.mean(delayed)
         idx_delay = super().waveform_delay(orig, delayed)
 
-        bias_currents = range(50, 101, 5)
-        attenuation_values = range(0, 20, 5)
+        bias_currents = range(55, 96, 5)
+        attenuation_values = range(0, 11, 2)
 
         for (signal_name, signal_type) in zip(signal_names, (square, misic)):
             for average in (False, True):
@@ -1286,14 +1284,14 @@ class Experiment_3(Experiment):
                     for attenuation in attenuation_values:
                         self.att.set_output(attenuation)
                         print(
-                            "Measuring for {} wave with bias current {}, average set "
-                            "to {}, and attenuation of {}".format(
-                                signal_name, current, average, attenuation
+                            "Measuring for {}, average set to {}, wave with bias "
+                            "current {}, and attenuation of {}".format(
+                                signal_name, average, current, attenuation
                             )
                         )
                         self.awg.send_waveform(signal_type, suppress_messages=True)
                         if average:
-                            time.sleep(5)
+                            time.sleep(6)
                         else:
                             time.sleep(2.5)
                         orig = self.osc.measurement(4)
@@ -1316,8 +1314,8 @@ class Experiment_3(Experiment):
 
                         result = [
                             "{}".format(signal_name),
-                            current,
                             int(average) * 49 + 1,  # number of points for measurement
+                            current,
                             attenuation,
                             mean_square_error,
                             "",
@@ -1341,5 +1339,5 @@ if __name__ == "__main__":
     # awg = TektronixAWG7122B("GPIB1::1::INSTR")
     # att = Agilent8156A("GPIB1::8::INSTR")
     # osc = Agilent86100C("GPIB1::7::INSTR")
-    ex2 = Experiment_2()
-    ex2.run("shf_cpp")
+    ex3 = Experiment_3()
+    ex3.run("shf")
