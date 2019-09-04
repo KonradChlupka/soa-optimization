@@ -1216,7 +1216,7 @@ class Experiment_3(Experiment):
     def __init__(self):
         """Initializes the devices needed in the experiment.
 
-        Initializes arbitrary function generator, oscilloscope, and
+        Initializes arbitrary function generator, oscilloscope, osa, and
         current source. Uses addresses from UCL CONNET lab. Edit source
         code of this class to change addresses.
         """
@@ -1224,12 +1224,13 @@ class Experiment_3(Experiment):
         self.osc = Agilent86100C("GPIB1::7::INSTR")
         self.current_source = Lightwave3220("GPIB1::12::INSTR", current_limit=100)
         self.att = Agilent8156A("GPIB1::8::INSTR")
+        self.osa = AnritsuMS9740A("GPIB1::3::INSTR")
 
     def run(self, name):
         """Runs the experiment, saves the results.
 
         Sends a squarewave made of 240 points, and a MISIC-like signal.
-        Measures them as an average of 100 points and also individually.
+        Measures them as an average of 50 points and also individually.
         The results are saved to csv, pickle, and self.results as a
         list. Sweeps the bias current and attenuation.
 
@@ -1244,6 +1245,7 @@ class Experiment_3(Experiment):
                 "bias_current",
                 "attenuation",
                 "mean_squared_error",
+                "osnr",
                 "",
                 "direct_signal",
                 "...",
@@ -1282,6 +1284,8 @@ class Experiment_3(Experiment):
                 for current in bias_currents:
                     self.current_source.set_output(current)
                     for attenuation in attenuation_values:
+                        osa = self.osa.screen_capture()
+                        osnr = max(osa) - min(osa)
                         self.att.set_output(attenuation)
                         print(
                             "Measuring for {}, average set to {}, wave with bias "
@@ -1318,6 +1322,7 @@ class Experiment_3(Experiment):
                             current,
                             attenuation,
                             mean_square_error,
+                            osnr,
                             "",
                             *orig,
                             "",
