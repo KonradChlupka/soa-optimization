@@ -1230,7 +1230,6 @@ class Experiment_3(Experiment):
         """Runs the experiment, saves the results.
 
         Sends a squarewave made of 240 points, and a MISIC-like signal.
-        Measures them as an average of 50 points and also individually.
         The results are saved to csv, pickle, and self.results as a
         list. Sweeps the bias current and attenuation.
 
@@ -1241,7 +1240,6 @@ class Experiment_3(Experiment):
         self.results = [
             [
                 "signal_type",
-                "n_average",
                 "bias_current",
                 "attenuation",
                 "mean_squared_error",
@@ -1262,74 +1260,68 @@ class Experiment_3(Experiment):
         square = np.array([-1.0] * 120 + [1.0] * 120)
 
         # setup oscilloscope for measurement
-        self.osc.set_acquire(average=True, count=50, points=1351)
+        self.osc.set_acquire(average=True, count=100, points=1351)
         self.osc.set_timebase(position=2.4e-8, range_=30e-9)
         # time_step = 30e-9 / 1351
 
         # get delay between signals
         self.current_source.set_output(75)
         self.awg.send_waveform(square, suppress_messages=True)
-        time.sleep(6)
+        time.sleep(8)
         orig = self.osc.measurement(4)
         delayed = np.array(self.osc.measurement(1))
         delayed = delayed - np.mean(delayed)
         idx_delay = super().waveform_delay(orig, delayed)
 
+        # turn off averaging on the oscilloscope
+        self.osc.set_acquire(average=False)
+
         bias_currents = range(55, 96, 5)
         attenuation_values = range(0, 11, 2)
 
         for (signal_name, signal_type) in zip(signal_names, (square, misic)):
-            for average in (False, True):
-                self.osc.set_acquire(average=average)
-                for current in bias_currents:
-                    self.current_source.set_output(current)
-                    for attenuation in attenuation_values:
-                        osa = self.osa.screen_capture()
-                        osnr = max(osa) - min(osa)
-                        self.att.set_output(attenuation)
-                        print(
-                            "Measuring for {}, average set to {}, wave with bias "
-                            "current {}, and attenuation of {}".format(
-                                signal_name, average, current, attenuation
-                            )
-                        )
-                        self.awg.send_waveform(signal_type, suppress_messages=True)
-                        if average:
-                            time.sleep(6)
-                        else:
-                            time.sleep(2.5)
-                        orig = self.osc.measurement(4)
-                        delayed = np.array(self.osc.measurement(1))
-                        delayed = delayed - np.mean(delayed)
+            for current in bias_currents:
+                self.current_source.set_output(current)
+                for attenuation in attenuation_values:
+                    osa = self.osa.screen_capture()
+                    osnr = max(osa) - min(osa)
+                    self.att.set_output(attenuation)
+                    print(
+                        "Measuring for {}, wave with bias current {}, and attenuation "
+                        "of {}".format(signal_name, current, attenuation)
+                    )
+                    self.awg.send_waveform(signal_type, suppress_messages=True)
+                    time.sleep(2)
+                    orig = self.osc.measurement(4)
+                    delayed = np.array(self.osc.measurement(1))
+                    delayed = delayed - np.mean(delayed)
 
-                        # align both signals (delayed is also flipped back)
-                        del orig[-idx_delay:]
-                        delayed = delayed[idx_delay:]
-                        orig = np.array(orig)
-                        delayed = -1 * np.array(delayed)
+                    # align both signals (delayed is also flipped back)
+                    del orig[-idx_delay:]
+                    delayed = delayed[idx_delay:]
+                    orig = np.array(orig)
+                    delayed = -1 * np.array(delayed)
 
-                        # normalize both signal
-                        rms_orig = np.sqrt(np.mean(orig ** 2))
-                        rms_delayed = np.sqrt(np.mean(delayed ** 2))
-                        orig_norm = orig / rms_orig
-                        delayed_norm = delayed / rms_delayed
+                    # normalize both signal
+                    rms_orig = np.sqrt(np.mean(orig ** 2))
+                    rms_delayed = np.sqrt(np.mean(delayed ** 2))
+                    orig_norm = orig / rms_orig
+                    delayed_norm = delayed / rms_delayed
 
-                        mean_square_error = np.mean((orig_norm - delayed_norm) ** 2)
+                    mean_square_error = np.mean((orig_norm - delayed_norm) ** 2)
 
-                        result = [
-                            "{}".format(signal_name),
-                            int(average) * 49 + 1,  # number of points for measurement
-                            current,
-                            attenuation,
-                            mean_square_error,
-                            osnr,
-                            "",
-                            *orig,
-                            "",
-                            *delayed,
-                        ]
-                        self.results.append(result)
-                    self.results.append([""])
+                    result = [
+                        "{}".format(signal_name),
+                        current,
+                        attenuation,
+                        mean_square_error,
+                        osnr,
+                        "",
+                        *orig,
+                        "",
+                        *delayed,
+                    ]
+                    self.results.append(result)
                 self.results.append([""])
             self.results.append([""])
 
