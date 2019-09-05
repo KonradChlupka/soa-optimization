@@ -1257,11 +1257,13 @@ class Experiment_3(Experiment):
         ]
 
         # create MISIC and square signals
-        signal_names = ["square", "MISIC"]
         random.seed(0)
-        misic = [random.randint(-2, 2) for i in range(60)]
-        misic = np.array([el / 2 for el in misic for _ in range(4)])
+        signal_names = ["square", "MISIC"]
         square = np.array([-1.0] * 120 + [1.0] * 120)
+        misic_a = [-1.] * 50
+        misic_b = np.array([random.randint(-2, 2) for _ in range(50)]) / 2
+        misic_c = np.array([random.randint(0, 2) for _ in range(140)]) / 2
+        misic = [*misic_a, *misic_b, *misic_c]
 
         # setup oscilloscope for measurement
         self.osc.set_acquire(average=True, count=100, points=1351)
