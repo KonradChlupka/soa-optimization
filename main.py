@@ -1286,7 +1286,7 @@ class Experiment_3(Experiment):
         self.osa.inst.write("AP LD")
 
         bias_currents = range(55, 96, 5)
-        attenuation_values = range(0, 11, 2)
+        attenuation_values = range(0, 17, 2)
 
         for (signal_name, signal_type) in zip(signal_names, (square, misic)):
             self.awg.send_waveform(signal_type, suppress_messages=True)
