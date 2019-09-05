@@ -1239,11 +1239,15 @@ class Experiment_3(Experiment):
         """
         self.results = [
             [
-                "signal_type",
-                "bias_current",
-                "attenuation",
+                "Signal type",
+                "Bias current [mA]",
+                "Attenuation [dB]",
                 "mean_squared_error",
-                "osnr",
+                "SMSR [dB]",
+                "Peak wavelength [nm]",
+                "Peak level [dBm]",
+                "SNR (/1nm) [dB]",
+                "SNR (Res 0.051 nm) [dB]",
                 "",
                 "direct_signal",
                 "...",
@@ -1276,22 +1280,30 @@ class Experiment_3(Experiment):
         # turn off averaging on the oscilloscope
         self.osc.set_acquire(average=False)
 
+        # setup OSA measurement (laser diode)
+        self.osa.inst.write("AP LD")
+
         bias_currents = range(55, 96, 5)
         attenuation_values = range(0, 11, 2)
 
         for (signal_name, signal_type) in zip(signal_names, (square, misic)):
+            self.awg.send_waveform(signal_type, suppress_messages=True)
+
             for current in bias_currents:
                 self.current_source.set_output(current)
+
                 for attenuation in attenuation_values:
-                    osa = self.osa.screen_capture()
-                    osnr = max(osa) - min(osa)
                     self.att.set_output(attenuation)
+
                     print(
                         "Measuring for {}, wave with bias current {}, and attenuation "
                         "of {}".format(signal_name, current, attenuation)
                     )
-                    self.awg.send_waveform(signal_type, suppress_messages=True)
                     time.sleep(2)
+
+                    osa_measurements = self.osa.inst.query("APR?")
+
+                    # oscilloscope measurements
                     orig = self.osc.measurement(4)
                     delayed = np.array(self.osc.measurement(1))
                     delayed = delayed - np.mean(delayed)
@@ -1308,14 +1320,18 @@ class Experiment_3(Experiment):
                     orig_norm = orig / rms_orig
                     delayed_norm = delayed / rms_delayed
 
-                    mean_square_error = np.mean((orig_norm - delayed_norm) ** 2)
+                    mean_squared_error = np.mean((orig_norm - delayed_norm) ** 2)
 
                     result = [
                         "{}".format(signal_name),
                         current,
                         attenuation,
-                        mean_square_error,
-                        osnr,
+                        mean_squared_error,
+                        osa_measurements[5],  # SMSR
+                        osa_measurements[6],  # Peak wavelength
+                        osa_measurements[7],  # Peak level
+                        osa_measurements[8],  # SNR (/1nm)
+                        osa_measurements[9],  # SNR (Res 0.051 nm)
                         "",
                         *orig,
                         "",
