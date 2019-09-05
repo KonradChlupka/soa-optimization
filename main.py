@@ -1303,7 +1303,7 @@ class Experiment_3(Experiment):
                     )
                     time.sleep(2)
 
-                    osa_measurements = self.osa.inst.query("APR?")
+                    osa_measurements = self.osa.inst.query("APR?").strip().split(",")
 
                     # oscilloscope measurements
                     orig = self.osc.measurement(4)
