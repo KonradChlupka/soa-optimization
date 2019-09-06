@@ -1290,6 +1290,7 @@ class Experiment_3(Experiment):
 
         for (signal_name, signal_type) in zip(signal_names, (square, misic)):
             self.awg.send_waveform(signal_type, suppress_messages=True)
+            time.sleep(2)
 
             for current in bias_currents:
                 self.current_source.set_output(current)
@@ -1301,7 +1302,7 @@ class Experiment_3(Experiment):
                         "Measuring for {}, wave with bias current {}, and attenuation "
                         "of {}".format(signal_name, current, attenuation)
                     )
-                    time.sleep(2)
+                    time.sleep(1.5)
 
                     osa_measurements = self.osa.inst.query("APR?").strip().split(",")
 
