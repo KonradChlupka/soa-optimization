@@ -8,7 +8,7 @@ from deap import algorithms  # contains ready genetic evolutionary loops
 
 creator.create(
     "FitnessMax", base.Fitness, weights=(1.0,)
-)  # type creation, minimizing function if weights is positive, weights must be iterable
+)  # positive weight means maximizing, only one means it's one objective
 creator.create("Individual", list, fitness=creator.FitnessMax)
 
 toolbox = base.Toolbox()  # stores functions with arguments for usage
