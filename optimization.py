@@ -7,7 +7,7 @@ from deap import tools  # contains operators
 from deap import algorithms  # contains ready genetic evolutionary loops
 
 creator.create(
-    "FitnessMax", base.Fitness, weights=(1.0,)
+    "FitnessMax", base.Fitness
 )  # type creation, maximizing function, weights must be iterable
 creator.create("Individual", list, fitness=creator.FitnessMax)
 
