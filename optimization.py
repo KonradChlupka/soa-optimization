@@ -16,10 +16,10 @@ FULL_RANGE_LEN = 30  # in the rising part, signal can be from -1 to 1
 TOP_LEN = 100  # final part of the signal can be between 0.5 and 1
 EVOLVING_LEN = 130  # only last 130 points are subject to evolution
 
-# system
+# transfer function
 num = [2.01199757841099e115]
 den = [
-    1,
+    1.0,
     1.00000001648985e19,
     1.64898505756825e30,
     4.56217233166632e40,
@@ -35,9 +35,14 @@ den = [
 trans_func = signal.TransferFunction(num, den)
 
 
-
 def initial_state(trans_func):
-    """TODO: docu
+    """Calculates system's steady-state response to a long -1 input.
+
+    Args:
+        trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
+
+    Returns:
+        float: System's steady-state response to a -1 input.
     """
     U = np.array([-1.0] * 240)
     T = np.linspace(0, 20e-9, 240)
@@ -48,11 +53,19 @@ def initial_state(trans_func):
 
 
 def rise_time(T, yout):
-    """TODO: docu
+    """Calculates 10% - 90% rise time.
+
+    Args:
+        T (np.ndarray[float])
+        yout (np.ndarray[float]): System's response. Must be same length
+            as T.
+
+    Returns:
+        float: Rise time.
     """
     ss = np.mean(yout[-24:])  # steady-state
     start = yout[0]
-    min_to_ss = ss - start
+    min_to_ss = ss - start  # amplitude difference
     ss_90 = start + 0.9 * min_to_ss
     ss_10 = start + 0.1 * min_to_ss
     return (
@@ -62,7 +75,19 @@ def rise_time(T, yout):
 
 
 def mean_squared_error(T, yout):
-    """TODO: docu
+    """Calculates mean squared error against perfect square response.
+
+    The perfect square response is a square wave made up of 240 points,
+    where the first 120 are -1.0 and the following 120 have the
+    amplitude of a steady state response (average of last 24 points).
+
+    Args:
+        T (np.ndarray[float])
+        yout (np.ndarray[float]): System's response. Must be same length
+            as T.
+
+    Returns:
+        float: Mean squared error.
     """
     ss = np.mean(yout[-24:])  # steady-state
     start = yout[0]
@@ -71,18 +96,27 @@ def mean_squared_error(T, yout):
 
 
 def illegal_driver_signal(U):
-    """TODO: docu
+    """Checks if the driving signal is valid.
+
+    Args:
+        U (np.ndarray[float]): Driving signal.
+    
+    Returns:
+        float: 0.0 is driving signal is valid, 0 otherwise.
     """
     if any(i != -1.0 for i in U[:STEADY_NEGATIVE_LEN]):
         raise AssertionError("First part of signal cannot change")
     # fmt: off
-    return (
+    return float(
         any(i < -1.0 for i in U[STEADY_NEGATIVE_LEN:STEADY_NEGATIVE_LEN + FULL_RANGE_LEN])
         or any(i > 1.0 for i in U[STEADY_NEGATIVE_LEN:STEADY_NEGATIVE_LEN + FULL_RANGE_LEN])
         or any(i < 0.5 for i in U[STEADY_NEGATIVE_LEN + FULL_RANGE_LEN:])
         or any(i > 1.0 for i in U[STEADY_NEGATIVE_LEN + FULL_RANGE_LEN:])
     )
     # fmt: on
+
+
+
 
 
 U = np.array([-1.0] * 120 + [1.0] * 120)
@@ -95,14 +129,15 @@ plt.plot(T, yout)
 input()
 
 
-
 creator.create(
     "FitnessMax", base.Fitness, weights=(1.0,)
 )  # positive weight means maximizing, only one means it's one objective
 creator.create("Individual", list, fitness=creator.FitnessMax)
 
 toolbox = base.Toolbox()  # stores functions with arguments for usage
-toolbox.register("attr_bool", lambda: random.random() * 10. - 5.)  # register such a function
+toolbox.register(
+    "attr_bool", lambda: random.random() * 10.0 - 5.0
+)  # register such a function
 toolbox.register(
     "individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=100
 )
@@ -117,7 +152,7 @@ def rastrigin(x):
     """Rastrigin test objective function.
     """
     x = np.copy(x)
-    x -= 5.
+    x -= 5.0
     N = len(x)
     return (-(10 * N + sum(x ** 2 - 10 * np.cos(2 * np.pi * x))),)
 
@@ -167,5 +202,4 @@ if __name__ == "__main__":
     plt.legend(loc="lower right")
     plt.show()
     input()
-
 
