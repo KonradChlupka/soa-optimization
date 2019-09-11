@@ -1,6 +1,7 @@
 import random
 import time
 
+from scoop import futures
 import numpy as np
 import matplotlib.pyplot as plt
 from deap import base  # contains Toolbox and base Fitness
@@ -16,24 +17,6 @@ FULL_RANGE_LEN = 30  # in the rising part, signal can be from -1 to 1
 TOP_LEN = 100  # final part of the signal can be between 0.5 and 1
 EVOLVING_LEN = 130  # only last 130 points are subject to evolution
 EVOLVING_TIMEBASE = SIGNAL_TIMEBASE * EVOLVING_LEN / SIGNAL_LEN
-
-# transfer function
-num = [2.01199757841099e115]
-den = [
-    1.0,
-    1.00000001648985e19,
-    1.64898505756825e30,
-    4.56217233166632e40,
-    3.04864287973918e51,
-    4.76302109455371e61,
-    1.70110870487715e72,
-    1.36694076792557e82,
-    2.81558045148153e92,
-    9.16930673102975e101,
-    1.68628748250276e111,
-    2.40236028415562e120,
-]
-trans_func = signal.TransferFunction(num, den)
 
 
 def initial_state(trans_func):
@@ -62,15 +45,21 @@ def rise_time(T, yout):
     Returns:
         float: Rise time.
     """
+    # TODO:
     ss = np.mean(yout[-24:])  # steady-state
     start = yout[0]
-    min_to_ss = ss - start  # amplitude difference
-    ss_90 = start + 0.9 * min_to_ss
-    ss_10 = start + 0.1 * min_to_ss
-    return (
-        T[next(i for i in range(len(yout) - 1) if yout[i] > ss_90)]
-        - T[next(i for i in range(len(yout) - 1) if yout[i] > ss_10)]
-    )
+    start_to_ss = ss - start  # amplitude difference
+    ss_90 = start + 0.9 * start_to_ss
+    ss_10 = start + 0.1 * start_to_ss
+    for i, t in enumerate(T):
+        if yout[i] >= ss_90:
+            t_90 = t
+            break
+    for i, t in enumerate(T):
+        if yout[i] >= ss_10:
+            t_10 = t
+            break
+    return t_90 - t_10
 
 
 def mean_squared_error(T, yout):
@@ -111,48 +100,67 @@ def illegal_driver_signal(U):
     )
 
 
-U = np.array([-1.0] * 120 + [1.0] * 120)
-T = np.linspace(0, 20e-9, 240)
+def fitness(U=U, T=T):
+    """TODO: docu
+    """
+    if illegal_driver_signal(U):
+        print((1.0, 1.0, 1.0))
+        return (1.0, 1.0, 1.0)
+    else:
+        (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-21)
+        temp = (rise_time(T, yout), mean_squared_error(T, yout), 0.0)
+        print(temp)
+        return temp
+
+
+# transfer function
+num = [2.01199757841099e115]
+den = [
+    1.0,
+    1.00000001648985e19,
+    1.64898505756825e30,
+    4.56217233166632e40,
+    3.04864287973918e51,
+    4.76302109455371e61,
+    1.70110870487715e72,
+    1.36694076792557e82,
+    2.81558045148153e92,
+    9.16930673102975e101,
+    1.68628748250276e111,
+    2.40236028415562e120,
+]
+trans_func = signal.TransferFunction(num, den)
+
+
+U = np.array([-1.0] * 10 + [1.0] * 120)
+T = np.linspace(0, EVOLVING_TIMEBASE, 130)
 X0 = initial_state(trans_func)
 
+
 # default rtol value is fine, but atol needs to be below 1e-21 or lower
-(_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-21)
-plt.plot(T, yout)
-input()
+# (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-21)
+# plt.plot(T, yout)
 
 
-creator.create(
-    "FitnessMax", base.Fitness, weights=(1.0,)
-)  # positive weight means maximizing, only one means it's one objective
-creator.create("Individual", list, fitness=creator.FitnessMax)
+# positive weight means maximizing, negative means minimizing
+# weights are for rise_time, mean_squared_error, illegal_driver_signal
+creator.create("Fitness", base.Fitness, weights=(-1.0, -1.0, -1.0))
+creator.create("Individual", list, fitness=creator.Fitness)
 
-toolbox = base.Toolbox()  # stores functions with arguments for usage
+# toolbox stores functions with arguments for usage
+# TODO: change individual
+toolbox = base.Toolbox()
 toolbox.register(
-    "attr_bool", lambda: random.random() * 10.0 - 5.0
-)  # register such a function
-toolbox.register(
-    "individual", tools.initRepeat, creator.Individual, toolbox.attr_bool, n=100
+    "individual", tools.initRepeat, creator.Individual, lambda: 0.75, n=130
 )
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-
-def evalOneMax(individual):  # fitness function
-    return (sum(individual),)
-
-
-def rastrigin(x):
-    """Rastrigin test objective function.
-    """
-    x = np.copy(x)
-    x -= 5.0
-    N = len(x)
-    return (-(10 * N + sum(x ** 2 - 10 * np.cos(2 * np.pi * x))),)
+toolbox.register("map", futures.map)
 
 
 # implementing necessary evolution steps
-toolbox.register("evaluate", rastrigin)
+toolbox.register("evaluate", fitness)
 toolbox.register("mate", tools.cxTwoPoint)
-toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=2, indpb=0.1)
+toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.1)
 toolbox.register("select", tools.selTournament, tournsize=3)
 
 
@@ -169,7 +177,7 @@ def main():
         toolbox,
         cxpb=0.5,
         mutpb=0.1,
-        ngen=500,
+        ngen=100,
         stats=stats,
         halloffame=hof,
         verbose=False,
