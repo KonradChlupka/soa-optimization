@@ -15,6 +15,7 @@ STEADY_NEGATIVE_LEN = 110  # each period starts with a const -1
 FULL_RANGE_LEN = 30  # in the rising part, signal can be from -1 to 1
 TOP_LEN = 100  # final part of the signal can be between 0.5 and 1
 EVOLVING_LEN = 130  # only last 130 points are subject to evolution
+EVOLVING_TIMEBASE = SIGNAL_TIMEBASE * EVOLVING_LEN / SIGNAL_LEN
 
 # transfer function
 num = [2.01199757841099e115]
@@ -44,11 +45,9 @@ def initial_state(trans_func):
     Returns:
         float: System's steady-state response to a -1 input.
     """
-    U = np.array([-1.0] * 240)
-    T = np.linspace(0, 20e-9, 240)
-    (T, yout, xout) = signal.lsim2(
-        trans_func, U=np.array([-1.0] * 240), T=T, X0=None, atol=1e-21
-    )
+    U = np.array([-1.0] * 480)
+    T = np.linspace(0, 40e-9, 480)
+    (T, yout, xout) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-21)
     return xout[-1]
 
 
@@ -77,8 +76,8 @@ def rise_time(T, yout):
 def mean_squared_error(T, yout):
     """Calculates mean squared error against perfect square response.
 
-    The perfect square response is a square wave made up of 240 points,
-    where the first 120 are -1.0 and the following 120 have the
+    The perfect square response is a square wave made up of 130 points,
+    where the first 10 are -1.0 and the following 120 have the
     amplitude of a steady state response (average of last 24 points).
 
     Args:
@@ -91,7 +90,7 @@ def mean_squared_error(T, yout):
     """
     ss = np.mean(yout[-24:])  # steady-state
     start = yout[0]
-    perfect_response = np.array([start] * 120 + [ss] * 120)
+    perfect_response = np.array([start] * 10 + [ss] * 120)
     return np.mean((perfect_response - yout) ** 2)
 
 
@@ -100,23 +99,16 @@ def illegal_driver_signal(U):
 
     Args:
         U (np.ndarray[float]): Driving signal.
-    
+
     Returns:
-        float: 0.0 is driving signal is valid, 0 otherwise.
+        float: 0.0 is driving signal is valid, 1.0 otherwise.
     """
-    if any(i != -1.0 for i in U[:STEADY_NEGATIVE_LEN]):
-        raise AssertionError("First part of signal cannot change")
-    # fmt: off
     return float(
-        any(i < -1.0 for i in U[STEADY_NEGATIVE_LEN:STEADY_NEGATIVE_LEN + FULL_RANGE_LEN])
-        or any(i > 1.0 for i in U[STEADY_NEGATIVE_LEN:STEADY_NEGATIVE_LEN + FULL_RANGE_LEN])
-        or any(i < 0.5 for i in U[STEADY_NEGATIVE_LEN + FULL_RANGE_LEN:])
-        or any(i > 1.0 for i in U[STEADY_NEGATIVE_LEN + FULL_RANGE_LEN:])
+        any(i < -1.0 for i in U[:30])
+        or any(i > 1.0 for i in U[:30])
+        or any(i < 0.5 for i in U[30:])
+        or any(i > 1.0 for i in U[30:])
     )
-    # fmt: on
-
-
-
 
 
 U = np.array([-1.0] * 120 + [1.0] * 120)
@@ -202,4 +194,3 @@ if __name__ == "__main__":
     plt.legend(loc="lower right")
     plt.show()
     input()
-
