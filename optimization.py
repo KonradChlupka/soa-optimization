@@ -30,7 +30,7 @@ def initial_state(trans_func):
     """
     U = np.array([-1.0] * 480)
     T = np.linspace(0, 40e-9, 480)
-    (T, yout, xout) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-22)
+    (T, yout, xout) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-13)
     return xout[-1]
 
 
@@ -79,7 +79,6 @@ def mean_squared_error(T, yout):
     Returns:
         float: Mean squared error. 1.0 if output is invalid.
     """
-    # TODO: compare to a constant value
     ss = np.mean(yout[-24:])  # steady-state
     start = yout[0]
     perfect_response = np.array([start] * 10 + [ss] * 120)
@@ -101,42 +100,70 @@ def valid_driver_signal(U):
     """
     return (
         all(i >= -1.0 for i in U[:30])
-        or all(i <= 1.0 for i in U[:30])
-        or all(i >= 0.5 for i in U[30:])
-        or all(i <= 1.0 for i in U[30:])
+        and all(i <= 1.0 for i in U[:30])
+        and all(i >= 0.5 for i in U[30:])
+        and all(i <= 1.0 for i in U[30:])
     )
 
 
 def fitness(U, T, X0, trans_func):
-    """TODO: docu
-    TODO: add rise time
+    """Calculates fitness of a match.
+
+    Args:
+        U (np.ndarray[float]): Driving signal.
+        T (np.ndarray[float])
+        X0 (float): System's steady-state response to a -1 input.
+        trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
+
     """
     if not valid_driver_signal(U):
-        print(1.0)
-        return 1.0
+        print(1.0, U, end="\n\n")
+        return (1.0,)
     else:
-        # atol of 1e-21 usually sufficient
-        (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-23)
-        # TODO: sanity check of yout
-        print(mean_squared_error(T, yout))
-        return mean_squared_error(T, yout),
+        # atol of 1e-21 is sufficient for a step func, original trans. func.
+        (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
+        mse = mean_squared_error(T, yout)
+        print(mse, U, end="\n\n")
+        return (mse,)
+
+
+def run_simulation(trans_func, T, X0):
+    pass
 
 
 if __name__ == "__main__":
-    num = [2.01199757841099e115]
+    # num = [2.01199757841099e115]
+    # den = [
+    #     1.0,
+    #     1.00000001648985e19,
+    #     1.64898505756825e30,
+    #     4.56217233166632e40,
+    #     3.04864287973918e51,
+    #     4.76302109455371e61,
+    #     1.70110870487715e72,
+    #     1.36694076792557e82,
+    #     2.81558045148153e92,
+    #     9.16930673102975e101,
+    #     1.68628748250276e111,
+    #     2.40236028415562e120,
+    # ]
+    # trans_func = signal.TransferFunction(num, den)
+
+    # simulation parameters
+
+    # simplified tf
+    num = [2.01199757841099e85]
     den = [
-        1.0,
-        1.00000001648985e19,
-        1.64898505756825e30,
-        4.56217233166632e40,
-        3.04864287973918e51,
-        4.76302109455371e61,
-        1.70110870487715e72,
-        1.36694076792557e82,
-        2.81558045148153e92,
-        9.16930673102975e101,
-        1.68628748250276e111,
-        2.40236028415562e120,
+        1.64898505756825e0,
+        4.56217233166632e10,
+        3.04864287973918e21,
+        4.76302109455371e31,
+        1.70110870487715e42,
+        1.36694076792557e52,
+        2.81558045148153e62,
+        9.16930673102975e71,
+        1.68628748250276e81,
+        2.40236028415562e90,
     ]
     trans_func = signal.TransferFunction(num, den)
 
@@ -147,13 +174,17 @@ if __name__ == "__main__":
     creator.create("Individual", list, fitness=creator.Fitness)
 
     toolbox = base.Toolbox()
-    # TODO: start with random range
-    toolbox.register("ind", tools.initRepeat, creator.Individual, lambda: 0.75, n=130)
+    initial = [random.uniform(-1, 1) for _ in range(30)] + [
+        random.uniform(0.5, 1) for _ in range(100)
+    ]
+    toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
     toolbox.register("population", tools.initRepeat, list, toolbox.ind, n=100)
     toolbox.register("map", multiprocessing.Pool(processes=100).map)
     toolbox.register("evaluate", fitness, T=T, X0=X0, trans_func=trans_func)
     toolbox.register("mate", tools.cxTwoPoint)
-    toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05)  # lower mutate probs.
+    toolbox.register(
+        "mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05
+    )  # lower mutate probs.
     toolbox.register("select", tools.selTournament, tournsize=3)
 
     pop = toolbox.population()
@@ -163,12 +194,10 @@ if __name__ == "__main__":
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    import time
-    tic = time.time()
     pop, logbook = algorithms.eaSimple(
         pop,
         toolbox,
-        cxpb=0.6, # higher
+        cxpb=0.6,  # higher
         mutpb=0.05,
         ngen=100,
         stats=stats,
@@ -177,7 +206,6 @@ if __name__ == "__main__":
     )
 
     print("Best individual is: %s\nwith fitness: %s" % (hof[0], hof[0].fitness))
-    print(time.time() - tic)
 
     gen, avg, min_, max_ = logbook.select("gen", "avg", "min", "max")
     # plt.plot(gen, avg, label="average")
