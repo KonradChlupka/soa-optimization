@@ -243,7 +243,7 @@ def soa_optimization():
     creator.create("Individual", list, fitness=creator.Fitness)
 
     toolbox = base.Toolbox()
-    initial = [[0.75] * 130]
+    initial = [0.75] * 130
     toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
     toolbox.register("population", tools.initRepeat, list, toolbox.ind, n=100)
     toolbox.register("evaluate", soa_fitness)
