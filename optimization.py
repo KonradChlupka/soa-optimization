@@ -41,7 +41,7 @@ def rise_time(T, yout):
             length as T.
 
     Returns:
-        float: Rise time. 1.0 if cannot be found.
+        float: Rise time. 1000.0 if cannot be found.
     """
     ss = np.mean(yout[-24:])  # steady-state
     start = yout[0]
@@ -59,7 +59,7 @@ def rise_time(T, yout):
     try:
         return t_90 - t_10
     except UnboundLocalError:
-        return 1.0
+        return 1000.0
 
 
 def mean_squared_error(yout, i_start, i_stop):
