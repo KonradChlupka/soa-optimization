@@ -10,86 +10,167 @@ from deap import tools  # contains operators
 from deap import algorithms  # contains ready genetic evolutionary loops
 from scipy import signal
 
-SIGNAL_TIMEBASE = 20e-9  # one period
-SIGNAL_LEN = 240  # one period has 240 points
-STEADY_NEGATIVE_LEN = 110  # each period starts with a const -1
-FULL_RANGE_LEN = 30  # in the rising part, signal can be from -1 to 1
-TOP_LEN = 100  # final part of the signal can be between 0.5 and 1
-EVOLVING_LEN = 130  # only last 130 points are subject to evolution
-EVOLVING_TIMEBASE = SIGNAL_TIMEBASE * EVOLVING_LEN / SIGNAL_LEN
+import devices
 
 
-def initial_state(trans_func):
-    """Calculates system's steady-state response to a long -1 input.
+class Optimization:
+    def __init__(self):
+        pass
 
-    Args:
-        trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
+    def find_x_init(self, trans_func):
+        """Calculates the state-vector resulting from long -1 input.
 
-    Returns:
-        float: System's steady-state response to a -1 input.
-    """
-    U = np.array([-1.0] * 480)
-    T = np.linspace(0, 40e-9, 480)
-    (T, yout, xout) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-13)
-    return xout[-1]
+        Args:
+            trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
+
+        Returns:
+            np.ndarray[float]: System's response.
+        """
+        U = np.array([-1.0] * 480)
+        T = np.linspace(0, 40e-9, 480)
+        (_, _, xout) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-13)
+        return xout[-1]
+
+    def rise_time(self, T, yout):
+        """Calculates 10% - 90% rise time.
+
+        The supplied signal must contain only the rising edge, and the
+        rise time is calculated by comparing to the average of the last
+        24 points of the signal.
+
+        Args:
+            T (np.ndarray[float])
+            yout (np.ndarray[float]): System's response. Must be same
+                length as T.
+
+        Returns:
+            float: Rise time. 1.0 if cannot be found.
+        """
+        ss = np.mean(yout[-24:])  # steady-state
+        start = yout[0]
+        start_to_ss = ss - start  # amplitude difference
+        ss_90 = start + 0.9 * start_to_ss
+        ss_10 = start + 0.1 * start_to_ss
+        for i, t in enumerate(T):
+            if yout[i] >= ss_90:
+                t_90 = t
+                break
+        for i, t in enumerate(T):
+            if yout[i] >= ss_10:
+                t_10 = t
+                break
+        try:
+            return t_90 - t_10
+        except UnboundLocalError:
+            return 1.0
+
+    def mean_squared_error(self, yout, i_start, i_stop):
+        """Calculates mean squared error against perfect square.
+
+        The perfect square is a square wave made up of 480 points, which
+        are 2 periods of a square wave:
+        [-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120. The
+        comparison is made between i_start and i_stop (inclusive).
+        yout is normalized before the comparison.
+
+        Args:
+            yout (np.ndarray[float]): System's response. Must be same
+            length as T.
+
+        Returns:
+            float: Mean squared error. 1.0 if output is invalid.
+        """
+        square = np.array([-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120)
+        square = square[i_start : i_stop + 1]
+
+        yout = np.array(yout)
+        y_mean = np.mean(yout)
+        y_centered = yout - y_mean
+        y_centered_rms = np.mean(y_centered ** 2) ** 0.5
+        y_norm = y_centered / y_centered_rms
+        mse = np.mean((square - y_norm) ** 2)
+        if 0 < mse < 1:
+            return mse
+        else:
+            return 1.0
 
 
-def rise_time(T, yout):
-    """Calculates 10% - 90% rise time.
+class SimulationOptimization(Optimization):
+    def __init__(self, pop_size=100):
+        """TODO: docu
+        """
+        # simplified tf
+        num = [2.01199757841099e85]
+        den = [
+            1.64898505756825e0,
+            4.56217233166632e10,
+            3.04864287973918e21,
+            4.76302109455371e31,
+            1.70110870487715e42,
+            1.36694076792557e52,
+            2.81558045148153e62,
+            9.16930673102975e71,
+            1.68628748250276e81,
+            2.40236028415562e90,
+        ]
+        self.trans_func = signal.TransferFunction(num, den)
+        self.T = np.linspace(0, 20e-9 * 130 / 240, 130)
+        self.X0 = super().find_x_init(trans_func)
 
-    Args:
-        T (np.ndarray[float])
-        yout (np.ndarray[float]): System's response. Must be same length
-            as T.
+        creator.create("Fitness", base.Fitness, weights=(-1.0,))
+        creator.create("Individual", list, fitness=creator.Fitness)
 
-    Returns:
-        float: Rise time.
-    """
-    ss = np.mean(yout[-24:])  # steady-state
-    start = yout[0]
-    start_to_ss = ss - start  # amplitude difference
-    ss_90 = start + 0.9 * start_to_ss
-    ss_10 = start + 0.1 * start_to_ss
-    for i, t in enumerate(T):
-        if yout[i] >= ss_90:
-            t_90 = t
-            break
-    for i, t in enumerate(T):
-        if yout[i] >= ss_10:
-            t_10 = t
-            break
-    try:
-        return t_90 - t_10
-    except UnboundLocalError:
-        return 1.0
+        self.toolbox = base.Toolbox()
+        initial = [random.uniform(-1, 1) for _ in range(30)] + [
+            random.uniform(0.5, 1) for _ in range(100)
+        ]
+        # fmt: off
+        self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
+        self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
+        self.toolbox.register("map", multiprocessing.Pool(processes=100).map)
+        self.toolbox.register("evaluate", fitness, T=T, X0=X0, trans_func=trans_func)
+        self.toolbox.register("mate", tools.cxTwoPoint)
+        self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05)
+        self.toolbox.register("select", tools.selTournament, tournsize=3)
+        # self.toolbox.register("eaSimple", )
+        # fmt: on
 
+    def run(self):
+        self.pop = self.toolbox.population()
+        self.hof = tools.HallOfFame(1)
+        self.stats = tools.Statistics(lambda ind: ind.fitness.values)
+        self.stats.register("avg", np.mean)
+        self.stats.register("min", np.min)
+        self.stats.register("max", np.max)
 
-def mean_squared_error(T, yout):
-    """Calculates mean squared error against perfect square response.
+        self.pop, self.logbook = algorithms.eaSimple(
+            self.pop,
+            self.toolbox,
+            cxpb=0.6,  # higher
+            mutpb=0.05,
+            ngen=100,
+            stats=stats,
+            halloffame=hof,
+            verbose=False,
+        )
 
-    The perfect square response is a square wave made up of 130 points,
-    where the first 10 are -1.0 and the following 120 have the
-    amplitude of a steady state response (average of last 24 points).
+        print("Best individual is: %s\nwith fitness: %s" % (hof[0], hof[0].fitness))
 
-    Args:
-        T (np.ndarray[float])
-        yout (np.ndarray[float]): System's response. Must be same length
-            as T.
-
-    Returns:
-        float: Mean squared error. 1.0 if output is invalid.
-    """
-    ss = np.mean(yout[-24:])  # steady-state
-    start = yout[0]
-    perfect_response = np.array([start] * 10 + [ss] * 120)
-    mse = np.mean((perfect_response - yout) ** 2)
-    if 0 < mse < 1:
-        return mse
-    else:
-        return 1.0
+        gen, avg, min_, max_ = logbook.select("gen", "avg", "min", "max")
+        # plt.plot(gen, avg, label="average")
+        plt.plot(gen, min_, label="minimum")
+        # plt.plot(gen, max_, label="maximum")
+        plt.xlabel("Generation")
+        plt.ylabel("Fitness")
+        plt.legend(loc="lower right")
+        plt.show()
 
 
-def valid_driver_signal(U):
+if __name__ == "__main__":
+    pass
+
+
+def valid_driver_signal(self, U):
     """Checks if the driving signal is valid.
 
     Args:
@@ -99,10 +180,10 @@ def valid_driver_signal(U):
         bool: True is driving signal is valid, False otherwise.
     """
     return (
-        all(i >= -1.0 for i in U[:30])
-        and all(i <= 1.0 for i in U[:30])
-        and all(i >= 0.5 for i in U[30:])
-        and all(i <= 1.0 for i in U[30:])
+        all(i > -1.0 for i in U)
+        and all(i < 1.0 for i in U)
+        and all(i < -0.5 for i in U[10:110])
+        and all(i > 0.5 for i in U[130:230])
     )
 
 
@@ -127,20 +208,9 @@ def fitness(U, T, X0, trans_func):
         return (mse,)
 
 
-def run_simulation(trans_func, T, X0):
-    pass
-
-
 def soa_optimization():
     """TODO: cleanup and docu
     """
-
-    from main import Lightwave7900B
-    from main import Lightwave3220
-    from main import AnritsuMS9740A
-    from main import TektronixAWG7122B
-    from main import Agilent8156A
-    from main import Agilent86100C
 
     def waveform_delay(original, delayed):
         """Calculates index delay between signals.
@@ -217,7 +287,7 @@ def soa_optimization():
 
     def soa_fitness(U):
         if not valid_U(U):
-            return 1.0,
+            return (1.0,)
         awg_signal = [-1.0] * 90
         awg_signal.extend(U)
         awg.send_waveform(awg_signal, suppress_messages=True)
@@ -281,89 +351,3 @@ def soa_optimization():
     plt.ylabel("Fitness")
     plt.legend(loc="lower right")
     plt.show()
-
-
-# if __name__ == "__main__":
-#     # num = [2.01199757841099e115]
-#     # den = [
-#     #     1.0,
-#     #     1.00000001648985e19,
-#     #     1.64898505756825e30,
-#     #     4.56217233166632e40,
-#     #     3.04864287973918e51,
-#     #     4.76302109455371e61,
-#     #     1.70110870487715e72,
-#     #     1.36694076792557e82,
-#     #     2.81558045148153e92,
-#     #     9.16930673102975e101,
-#     #     1.68628748250276e111,
-#     #     2.40236028415562e120,
-#     # ]
-#     # trans_func = signal.TransferFunction(num, den)
-
-#     # simulation parameters
-
-#     # simplified tf
-#     num = [2.01199757841099e85]
-#     den = [
-#         1.64898505756825e0,
-#         4.56217233166632e10,
-#         3.04864287973918e21,
-#         4.76302109455371e31,
-#         1.70110870487715e42,
-#         1.36694076792557e52,
-#         2.81558045148153e62,
-#         9.16930673102975e71,
-#         1.68628748250276e81,
-#         2.40236028415562e90,
-#     ]
-#     trans_func = signal.TransferFunction(num, den)
-
-#     T = np.linspace(0, EVOLVING_TIMEBASE, 130)
-#     X0 = initial_state(trans_func)
-
-#     creator.create("Fitness", base.Fitness, weights=(-1.0,))
-#     creator.create("Individual", list, fitness=creator.Fitness)
-
-#     toolbox = base.Toolbox()
-#     initial = [random.uniform(-1, 1) for _ in range(30)] + [
-#         random.uniform(0.5, 1) for _ in range(100)
-#     ]
-#     toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
-#     toolbox.register("population", tools.initRepeat, list, toolbox.ind, n=100)
-#     toolbox.register("map", multiprocessing.Pool(processes=100).map)
-#     toolbox.register("evaluate", fitness, T=T, X0=X0, trans_func=trans_func)
-#     toolbox.register("mate", tools.cxTwoPoint)
-#     toolbox.register(
-#         "mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05
-#     )  # lower mutate probs.
-#     toolbox.register("select", tools.selTournament, tournsize=3)
-
-#     pop = toolbox.population()
-#     hof = tools.HallOfFame(1)
-#     stats = tools.Statistics(lambda ind: ind.fitness.values)
-#     stats.register("avg", np.mean)
-#     stats.register("min", np.min)
-#     stats.register("max", np.max)
-
-#     pop, logbook = algorithms.eaSimple(
-#         pop,
-#         toolbox,
-#         cxpb=0.6,  # higher
-#         mutpb=0.05,
-#         ngen=100,
-#         stats=stats,
-#         halloffame=hof,
-#         verbose=False,
-#     )
-
-#     print("Best individual is: %s\nwith fitness: %s" % (hof[0], hof[0].fitness))
-
-#     gen, avg, min_, max_ = logbook.select("gen", "avg", "min", "max")
-#     # plt.plot(gen, avg, label="average")
-#     plt.plot(gen, min_, label="minimum")
-#     # plt.plot(gen, max_, label="maximum")
-#     plt.xlabel("Generation")
-#     plt.ylabel("Fitness")
-#     plt.legend(loc="lower right")
-#     plt.show()
