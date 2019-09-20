@@ -70,7 +70,7 @@ class Optimization:
         The perfect square is a square wave made up of 480 points, which
         are 2 periods of a square wave:
         [-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120. The
-        comparison is made between i_start and i_stop (inclusive).
+        comparison is made between i_start and i_stop (exclusive).
         yout is normalized before the comparison.
 
         Args:
@@ -78,10 +78,10 @@ class Optimization:
             length as T.
 
         Returns:
-            float: Mean squared error. 1.0 if output is invalid.
+            float: Mean squared error. 1000.0 if output is invalid.
         """
         square = np.array([-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120)
-        square = square[i_start : i_stop + 1]
+        square = square[i_start:i_stop]
 
         yout = np.array(yout)
         y_mean = np.mean(yout)
@@ -89,14 +89,34 @@ class Optimization:
         y_centered_rms = np.mean(y_centered ** 2) ** 0.5
         y_norm = y_centered / y_centered_rms
         mse = np.mean((square - y_norm) ** 2)
-        if 0 < mse < 1:
+        if 0 < mse < 1000:
             return mse
         else:
-            return 1.0
+            return 1000.0
+
+    def valid_driver_signal(self, U):
+        """Checks if the driving signal is valid.
+
+        Args:
+            U (np.ndarray[float]): Driving signal. If shorter than 240
+            points, then assumed that it was clipped from the front.
+
+        Returns:
+            bool: True is driving signal is valid, False otherwise.
+        """
+        length = len(U)
+        if length < 240:
+            U = (240 - length) * [-0.75] + list(U)
+        return (
+            all(i > -1.0 for i in U)
+            and all(i < 1.0 for i in U)
+            and all(i < -0.5 for i in U[10:110])
+            and all(i > 0.5 for i in U[130:230])
+        )
 
 
 class SimulationOptimization(Optimization):
-    def __init__(self, pop_size=100):
+    def __init__(self, pop_size=50):
         """TODO: docu
         """
         # simplified tf
@@ -115,25 +135,44 @@ class SimulationOptimization(Optimization):
         ]
         self.trans_func = signal.TransferFunction(num, den)
         self.T = np.linspace(0, 20e-9 * 130 / 240, 130)
-        self.X0 = super().find_x_init(trans_func)
+        self.X0 = super().find_x_init(self.trans_func)
 
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = [random.uniform(-1, 1) for _ in range(30)] + [
-            random.uniform(0.5, 1) for _ in range(100)
+        initial = [random.uniform(-1, 1) for _ in range(20)] + [
+            random.uniform(0.5, 1) for _ in range(110)
         ]
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
-        self.toolbox.register("map", multiprocessing.Pool(processes=100).map)
-        self.toolbox.register("evaluate", fitness, T=T, X0=X0, trans_func=trans_func)
+        # self.toolbox.register("map", multiprocessing.Pool(processes=100).map)
+        self.toolbox.register("evaluate", self.fitness, T=self.T, X0=self.X0, trans_func=self.trans_func)
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
         # self.toolbox.register("eaSimple", )
         # fmt: on
+
+    def fitness(self, U, T, X0, trans_func):
+        """Calculates fitness of a match.
+
+        Args:
+            U (np.ndarray[float]): Driving signal.
+            T (np.ndarray[float])
+            X0 (float): System's steady-state response to a -1 input.
+            trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
+
+        """
+        if not super().valid_driver_signal(U):
+            return (1000.0,)
+        else:
+            # atol of 1e-21 is sufficient for a step func, original trans. func.
+            (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
+            mse = super().mean_squared_error(yout, 110, 240)
+            print(mse)
+            return (mse,)
 
     def run(self):
         self.pop = self.toolbox.population()
@@ -148,15 +187,18 @@ class SimulationOptimization(Optimization):
             self.toolbox,
             cxpb=0.6,  # higher
             mutpb=0.05,
-            ngen=100,
-            stats=stats,
-            halloffame=hof,
+            ngen=50,
+            stats=self.stats,
+            halloffame=self.hof,
             verbose=False,
         )
 
-        print("Best individual is: %s\nwith fitness: %s" % (hof[0], hof[0].fitness))
+        print(
+            "Best individual is: %s\nwith fitness: %s"
+            % (self.hof[0], self.hof[0].fitness)
+        )
 
-        gen, avg, min_, max_ = logbook.select("gen", "avg", "min", "max")
+        gen, avg, min_, max_ = self.logbook.select("gen", "avg", "min", "max")
         # plt.plot(gen, avg, label="average")
         plt.plot(gen, min_, label="minimum")
         # plt.plot(gen, max_, label="maximum")
@@ -167,45 +209,9 @@ class SimulationOptimization(Optimization):
 
 
 if __name__ == "__main__":
-    pass
-
-
-def valid_driver_signal(self, U):
-    """Checks if the driving signal is valid.
-
-    Args:
-        U (np.ndarray[float]): Driving signal.
-
-    Returns:
-        bool: True is driving signal is valid, False otherwise.
-    """
-    return (
-        all(i > -1.0 for i in U)
-        and all(i < 1.0 for i in U)
-        and all(i < -0.5 for i in U[10:110])
-        and all(i > 0.5 for i in U[130:230])
-    )
-
-
-def fitness(U, T, X0, trans_func):
-    """Calculates fitness of a match.
-
-    Args:
-        U (np.ndarray[float]): Driving signal.
-        T (np.ndarray[float])
-        X0 (float): System's steady-state response to a -1 input.
-        trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
-
-    """
-    if not valid_driver_signal(U):
-        print(1.0, U, end="\n\n")
-        return (1.0,)
-    else:
-        # atol of 1e-21 is sufficient for a step func, original trans. func.
-        (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
-        mse = mean_squared_error(T, yout)
-        print(mse, U, end="\n\n")
-        return (mse,)
+    x = SimulationOptimization()
+    x.run()
+    input()
 
 
 def soa_optimization():
