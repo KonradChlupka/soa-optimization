@@ -166,12 +166,12 @@ class SimulationOptimization:
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
-        self.toolbox.register("map", multiprocessing.Pool(processes=100).map)
+        self.toolbox.register("map", multiprocessing.Pool(processes=50).map)
         self.toolbox.register("evaluate", simulation_fitness, T=self.T, X0=self.X0, trans_func=self.trans_func)
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
-        # self.toolbox.register("eaSimple", )
+        self.toolbox.register("eaSimple", algorithms.eaSimple, cxpb=0.6, mutpb=0.05, ngen=10)
         # fmt: on
 
     def run(self):
@@ -182,12 +182,9 @@ class SimulationOptimization:
         self.stats.register("min", np.min)
         self.stats.register("max", np.max)
 
-        self.pop, self.logbook = algorithms.eaSimple(
+        self.pop, self.logbook = self.toolbox.eaSimple(
             self.pop,
             self.toolbox,
-            cxpb=0.6,  # higher
-            mutpb=0.05,
-            ngen=50,
             stats=self.stats,
             halloffame=self.hof,
             verbose=False,
