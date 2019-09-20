@@ -114,7 +114,7 @@ def valid_driver_signal(U):
     )
 
 
-def fitness(U, T, X0, trans_func):
+def simulation_fitness(U, T, X0, trans_func):
     """Calculates fitness of a match.
 
     Args:
@@ -167,7 +167,7 @@ class SimulationOptimization:
         self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
         self.toolbox.register("map", multiprocessing.Pool(processes=100).map)
-        self.toolbox.register("evaluate", fitness, T=self.T, X0=self.X0, trans_func=self.trans_func)
+        self.toolbox.register("evaluate", simulation_fitness, T=self.T, X0=self.X0, trans_func=self.trans_func)
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
