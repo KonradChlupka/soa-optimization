@@ -13,109 +13,128 @@ from scipy import signal
 import devices
 
 
-class Optimization:
-    def __init__(self):
-        pass
+def find_x_init(trans_func):
+    """Calculates the state-vector resulting from long -1 input.
 
-    def find_x_init(self, trans_func):
-        """Calculates the state-vector resulting from long -1 input.
+    Args:
+        trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
 
-        Args:
-            trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
+    Returns:
+        np.ndarray[float]: System's response.
+    """
+    U = np.array([-1.0] * 480)
+    T = np.linspace(0, 40e-9, 480)
+    (_, _, xout) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-13)
+    return xout[-1]
 
-        Returns:
-            np.ndarray[float]: System's response.
-        """
-        U = np.array([-1.0] * 480)
-        T = np.linspace(0, 40e-9, 480)
-        (_, _, xout) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-13)
-        return xout[-1]
 
-    def rise_time(self, T, yout):
-        """Calculates 10% - 90% rise time.
+def rise_time(T, yout):
+    """Calculates 10% - 90% rise time.
 
-        The supplied signal must contain only the rising edge, and the
-        rise time is calculated by comparing to the average of the last
-        24 points of the signal.
+    The supplied signal must contain only the rising edge, and the
+    rise time is calculated by comparing to the average of the last
+    24 points of the signal.
 
-        Args:
-            T (np.ndarray[float])
-            yout (np.ndarray[float]): System's response. Must be same
-                length as T.
-
-        Returns:
-            float: Rise time. 1.0 if cannot be found.
-        """
-        ss = np.mean(yout[-24:])  # steady-state
-        start = yout[0]
-        start_to_ss = ss - start  # amplitude difference
-        ss_90 = start + 0.9 * start_to_ss
-        ss_10 = start + 0.1 * start_to_ss
-        for i, t in enumerate(T):
-            if yout[i] >= ss_90:
-                t_90 = t
-                break
-        for i, t in enumerate(T):
-            if yout[i] >= ss_10:
-                t_10 = t
-                break
-        try:
-            return t_90 - t_10
-        except UnboundLocalError:
-            return 1.0
-
-    def mean_squared_error(self, yout, i_start, i_stop):
-        """Calculates mean squared error against perfect square.
-
-        The perfect square is a square wave made up of 480 points, which
-        are 2 periods of a square wave:
-        [-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120. The
-        comparison is made between i_start and i_stop (exclusive).
-        yout is normalized before the comparison.
-
-        Args:
-            yout (np.ndarray[float]): System's response. Must be same
+    Args:
+        T (np.ndarray[float])
+        yout (np.ndarray[float]): System's response. Must be same
             length as T.
 
-        Returns:
-            float: Mean squared error. 1000.0 if output is invalid.
-        """
-        square = np.array([-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120)
-        square = square[i_start:i_stop]
-
-        yout = np.array(yout)
-        y_mean = np.mean(yout)
-        y_centered = yout - y_mean
-        y_centered_rms = np.mean(y_centered ** 2) ** 0.5
-        y_norm = y_centered / y_centered_rms
-        mse = np.mean((square - y_norm) ** 2)
-        if 0 < mse < 1000:
-            return mse
-        else:
-            return 1000.0
-
-    def valid_driver_signal(self, U):
-        """Checks if the driving signal is valid.
-
-        Args:
-            U (np.ndarray[float]): Driving signal. If shorter than 240
-            points, then assumed that it was clipped from the front.
-
-        Returns:
-            bool: True is driving signal is valid, False otherwise.
-        """
-        length = len(U)
-        if length < 240:
-            U = (240 - length) * [-0.75] + list(U)
-        return (
-            all(i > -1.0 for i in U)
-            and all(i < 1.0 for i in U)
-            and all(i < -0.5 for i in U[10:110])
-            and all(i > 0.5 for i in U[130:230])
-        )
+    Returns:
+        float: Rise time. 1.0 if cannot be found.
+    """
+    ss = np.mean(yout[-24:])  # steady-state
+    start = yout[0]
+    start_to_ss = ss - start  # amplitude difference
+    ss_90 = start + 0.9 * start_to_ss
+    ss_10 = start + 0.1 * start_to_ss
+    for i, t in enumerate(T):
+        if yout[i] >= ss_90:
+            t_90 = t
+            break
+    for i, t in enumerate(T):
+        if yout[i] >= ss_10:
+            t_10 = t
+            break
+    try:
+        return t_90 - t_10
+    except UnboundLocalError:
+        return 1.0
 
 
-class SimulationOptimization(Optimization):
+def mean_squared_error(yout, i_start, i_stop):
+    """Calculates mean squared error against perfect square.
+
+    The perfect square is a square wave made up of 480 points, which
+    are 2 periods of a square wave:
+    [-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120. The
+    comparison is made between i_start and i_stop (exclusive).
+    yout is normalized before the comparison.
+
+    Args:
+        yout (np.ndarray[float]): System's response. Must be same
+        length as T.
+
+    Returns:
+        float: Mean squared error. 1000.0 if output is invalid.
+    """
+    square = np.array([-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120)
+    square = square[i_start:i_stop]
+
+    yout = np.array(yout)
+    y_mean = np.mean(yout)
+    y_centered = yout - y_mean
+    y_centered_rms = np.mean(y_centered ** 2) ** 0.5
+    y_norm = y_centered / y_centered_rms
+    mse = np.mean((square - y_norm) ** 2)
+    if 0 < mse < 1000:
+        return mse
+    else:
+        return 1000.0
+
+
+def valid_driver_signal(U):
+    """Checks if the driving signal is valid.
+
+    Args:
+        U (np.ndarray[float]): Driving signal. If shorter than 240
+        points, then assumed that it was clipped from the front.
+
+    Returns:
+        bool: True is driving signal is valid, False otherwise.
+    """
+    length = len(U)
+    if length < 240:
+        U = (240 - length) * [-0.75] + list(U)
+    return (
+        all(i > -1.0 for i in U)
+        and all(i < 1.0 for i in U)
+        and all(i < -0.5 for i in U[10:110])
+        and all(i > 0.5 for i in U[130:230])
+    )
+
+
+def fitness(U, T, X0, trans_func):
+    """Calculates fitness of a match.
+
+    Args:
+        U (np.ndarray[float]): Driving signal.
+        T (np.ndarray[float])
+        X0 (float): System's steady-state response to a -1 input.
+        trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
+
+    """
+    if not valid_driver_signal(U):
+        return (1000.0,)
+    else:
+        # atol of 1e-21 is sufficient for a step func, original trans. func.
+        (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
+        mse = mean_squared_error(yout, 110, 240)
+        print(mse)
+        return (mse,)
+
+
+class SimulationOptimization:
     def __init__(self, pop_size=50):
         """TODO: docu
         """
@@ -135,7 +154,7 @@ class SimulationOptimization(Optimization):
         ]
         self.trans_func = signal.TransferFunction(num, den)
         self.T = np.linspace(0, 20e-9 * 130 / 240, 130)
-        self.X0 = super().find_x_init(self.trans_func)
+        self.X0 = find_x_init(self.trans_func)
 
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.Fitness)
@@ -147,32 +166,13 @@ class SimulationOptimization(Optimization):
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
-        # self.toolbox.register("map", multiprocessing.Pool(processes=100).map)
-        self.toolbox.register("evaluate", self.fitness, T=self.T, X0=self.X0, trans_func=self.trans_func)
+        self.toolbox.register("map", multiprocessing.Pool(processes=100).map)
+        self.toolbox.register("evaluate", fitness, T=self.T, X0=self.X0, trans_func=self.trans_func)
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05)
         self.toolbox.register("select", tools.selTournament, tournsize=3)
         # self.toolbox.register("eaSimple", )
         # fmt: on
-
-    def fitness(self, U, T, X0, trans_func):
-        """Calculates fitness of a match.
-
-        Args:
-            U (np.ndarray[float]): Driving signal.
-            T (np.ndarray[float])
-            X0 (float): System's steady-state response to a -1 input.
-            trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
-
-        """
-        if not super().valid_driver_signal(U):
-            return (1000.0,)
-        else:
-            # atol of 1e-21 is sufficient for a step func, original trans. func.
-            (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
-            mse = super().mean_squared_error(yout, 110, 240)
-            print(mse)
-            return (mse,)
 
     def run(self):
         self.pop = self.toolbox.population()
