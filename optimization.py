@@ -129,14 +129,39 @@ def simulation_fitness(U, T, X0, trans_func):
     else:
         # atol of 1e-21 is sufficient for a step func, original trans. func.
         (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
+        t = rise_time(T, yout)
         mse = mean_squared_error(yout, 110, 240)
-        print(mse)
-        return (mse,)
+        print(t)
+        return (t,)
 
 
 class SimulationOptimization:
-    def __init__(self, pop_size=50):
-        """TODO: docu
+    def __init__(
+        self,
+        pop_size=100,
+        mu=0,
+        sigma=0.1,
+        indpb=0.05,
+        tournsize=3,
+        cxpb=0.6,
+        mutpb=0.05,
+        ngen=50,
+    ):
+        """Implements optimization for simulated SOA.
+
+        Args:
+            pop_size (int): Populaiton size (number of individuals in
+                each generation).
+            mu (number): Mean for the gaussian addition mutation.
+            sigma (number): Standard deviation for the gaussian addition
+                mutation.
+            indpb (number): Independent probability for each attribute
+                to be mutated.
+            tournsize (int): The number of individuals participating in
+                each tournament.
+            cxpb (number): The probability of mating two individuals.
+            mutpb (number): The probability of mutating an individual.
+            ngen (int): The number of generation.
         """
         # simplified tf
         num = [2.01199757841099e85]
@@ -166,12 +191,12 @@ class SimulationOptimization:
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
-        self.toolbox.register("map", multiprocessing.Pool(processes=50).map)
+        self.toolbox.register("map", multiprocessing.Pool(processes=pop_size).map)
         self.toolbox.register("evaluate", simulation_fitness, T=self.T, X0=self.X0, trans_func=self.trans_func)
         self.toolbox.register("mate", tools.cxTwoPoint)
-        self.toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05)
-        self.toolbox.register("select", tools.selTournament, tournsize=3)
-        self.toolbox.register("eaSimple", algorithms.eaSimple, cxpb=0.6, mutpb=0.05, ngen=10)
+        self.toolbox.register("mutate", tools.mutGaussian, mu=mu, sigma=sigma, indpb=indpb)
+        self.toolbox.register("select", tools.selTournament, tournsize=tournsize)
+        self.toolbox.register("eaSimple", algorithms.eaSimple, cxpb=cxpb, mutpb=mutpb, ngen=ngen)
         # fmt: on
 
     def run(self):
@@ -183,11 +208,7 @@ class SimulationOptimization:
         self.stats.register("max", np.max)
 
         self.pop, self.logbook = self.toolbox.eaSimple(
-            self.pop,
-            self.toolbox,
-            stats=self.stats,
-            halloffame=self.hof,
-            verbose=False,
+            self.pop, self.toolbox, stats=self.stats, halloffame=self.hof, verbose=False
         )
 
         print(
@@ -196,9 +217,7 @@ class SimulationOptimization:
         )
 
         gen, avg, min_, max_ = self.logbook.select("gen", "avg", "min", "max")
-        # plt.plot(gen, avg, label="average")
         plt.plot(gen, min_, label="minimum")
-        # plt.plot(gen, max_, label="maximum")
         plt.xlabel("Generation")
         plt.ylabel("Fitness")
         plt.legend(loc="lower right")
