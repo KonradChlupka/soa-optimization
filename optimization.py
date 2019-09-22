@@ -132,7 +132,7 @@ def simulation_fitness(U, T, X0, trans_func):
         t = rise_time(T, yout)
         mse = mean_squared_error(yout, 110, 240)
         # print(mse)
-        return (mse,)
+        return (t,)
 
 
 def best_of_population(population):
@@ -242,41 +242,38 @@ def eaSimple(
         print(logbook.stream)
 
     plt.figure()
+    plt.ylim((-10, -10 + 1e-10), auto=True)
     plt.xlabel("Generation")
     plt.ylabel("Fitness")
     # Begin the generational process
-    try:
-        for gen in range(1, ngen + 1):
-            print("Generation {}".format(gen))
-            # Select the next generation individuals
-            offspring = toolbox.select(population, len(population))
+    for gen in range(1, ngen + 1):
+        print("Generation {}".format(gen))
+        # Select the next generation individuals
+        offspring = toolbox.select(population, len(population))
 
-            # Vary the pool of individuals
-            offspring = algorithms.varAnd(offspring, toolbox, cxpb, mutpb)
+        # Vary the pool of individuals
+        offspring = algorithms.varAnd(offspring, toolbox, cxpb, mutpb)
 
-            # Evaluate the individuals with an invalid fitness
-            invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-            fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
-            for ind, fit in zip(invalid_ind, fitnesses):
-                ind.fitness.values = fit
+        # Evaluate the individuals with an invalid fitness
+        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
+        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind)
+        for ind, fit in zip(invalid_ind, fitnesses):
+            ind.fitness.values = fit
 
-            # Update the hall of fame with the generated individuals
-            if halloffame is not None:
-                halloffame.update(offspring)
+        # Update the hall of fame with the generated individuals
+        if halloffame is not None:
+            halloffame.update(offspring)
 
-            # Replace the current population by the offspring
-            population[:] = offspring
+        # Replace the current population by the offspring
+        population[:] = offspring
 
-            # Append the current generation statistics to the logbook
-            record = stats.compile(population) if stats else {}
-            logbook.record(gen=gen, nevals=len(invalid_ind), **record)
-            if verbose:
-                print(logbook.stream)
-            plt.scatter(gen, logbook.select("min_fitness")[-1], c='blue')
-            plt.pause(0.05)
-    except KeyboardInterrupt:
-        time.sleep(2)
-        print("Execution interrupted. You can still retrieve the data.")
+        # Append the current generation statistics to the logbook
+        record = stats.compile(population) if stats else {}
+        logbook.record(gen=gen, nevals=len(invalid_ind), **record)
+        if verbose:
+            print(logbook.stream)
+        plt.scatter(gen, logbook.select("min_fitness")[-1], c="blue")
+        plt.pause(0.05)
 
     return population, logbook
 
@@ -374,7 +371,7 @@ class SimulationOptimization:
 
 
 if __name__ == "__main__":
-    x = SimulationOptimization(pop_size=30, ngen=20)
+    x = SimulationOptimization(pop_size=100, ngen=500, mutpb=0.2, indpb=0.2)
     x.run()
     input()
 
