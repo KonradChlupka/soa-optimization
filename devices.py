@@ -7,7 +7,7 @@ import numpy as np
 
 class Lightwave7900B:
     def __init__(self, address=None):
-        """Initializes object to communicate with Lightwave7900B
+        """Initializes object to communicate with Lightwave7900B.
 
         If no address is specified, __init__ will look through all the
         avaliable addresses to find the device, otherwise, it will check
@@ -15,7 +15,7 @@ class Lightwave7900B:
 
         Args:
             address (str): GPIB address of the device, e.g.
-                "GPIB1::1::INSTR"
+                "GPIB1::1::INSTR".
         """
         # open resource manager
         self.rm = visa.ResourceManager()
@@ -43,10 +43,10 @@ class Lightwave7900B:
             self.inst = None
 
     def start_channels(self, channels=(1,)):
-        """Selects and starts specified channels
+        """Selects and starts specified channels.
 
         Args:
-            channels: tuple of integers between 1 and 8
+            channels: Tuple of integers between 1 and 8.
         """
         assert isinstance(channels, tuple), "Argument must be a tuple"
 
@@ -58,7 +58,7 @@ class Lightwave7900B:
             self.inst.write("OUT {}".format(int(i in channels)))
 
     def set_channel_power(self, channel, power):
-        """Sets power on a specified channel
+        """Sets power on a specified channel.
 
         Args:
             channel (int)
@@ -76,14 +76,14 @@ class Lightwave7900B:
         self.inst.write("LEVEL {}".format(power))
 
     def sweep_channel_power(self, channel, start, stop, step, seconds):
-        """Turns on a channel and sweeps the power output
+        """Turns on a channel and sweeps the power output.
 
         Args:
             channel (int)
-            start (number): starting point of sweep
-            stop (number): sweep does not include this value
-            step (number): size of step
-            seconds (number): time between steps
+            start (number): Starting point of sweep.
+            stop (number): Sweep does not include this value.
+            step (number): Size of step.
+            seconds (number): Time between steps.
         """
         assert isinstance(channel, int), "Channel must be an int"
 
@@ -100,7 +100,7 @@ class Lightwave7900B:
             time.sleep(seconds)
 
     def set_channel_wavelength(self, channel, wavelength):
-        """Sets wavelength on a specified channel
+        """Sets wavelength on a specified channel.
 
         Args:
             channel (int)
@@ -134,7 +134,7 @@ class Lightwave7900B:
         self.inst.write("WAVE {}".format(wavelength))
 
     def close(self):
-        """Close instrument and resource manager
+        """Closes instrument and resource manager
         """
         self.inst.close()
         self.rm.close()
@@ -142,7 +142,7 @@ class Lightwave7900B:
 
 class Lightwave3220:
     def __init__(self, address=None, current_limit=None):
-        """Initializes object to communicate with Lightwave3220
+        """Initializes object to communicate with Lightwave3220.
 
         If no address is specified, __init__ will look through all the
         avaliable addresses to find the device, otherwise, it will check
@@ -150,8 +150,8 @@ class Lightwave3220:
 
         Args:
             address (str): GPIB address of the device, e.g.
-                "GPIB1::1::INSTR"
-            current_limit (number): current limit in mA
+                "GPIB1::1::INSTR".
+            current_limit (number): urrent limit in mA.
         """
         # open resource manager
         self.rm = visa.ResourceManager()
@@ -180,13 +180,13 @@ class Lightwave3220:
             self.inst = None
 
     def set_output(self, current, switch_output_on=True):
-        """Sets the current output to specified value
+        """Sets the current output to specified value.
 
         Args:
             current (number)
-            switch_output_on (bool): if True, it will turn on the
+            switch_output_on (bool): If True, it will turn on the
                 output after specifying the current, otherwise it will
-                stay in the initial state, whether on or off
+                stay in the initial state, whether on or off.
         """
         assert isinstance(current, int) or isinstance(
             current, float
@@ -205,13 +205,13 @@ class Lightwave3220:
         self.inst.write("LAS:OUT 1")
 
     def sweep_current(self, start, stop, step, seconds):
-        """Turns on the current source and sweeps the output current
+        """Turns on the current source and sweeps the output current.
 
         Args:
-            start (number): starting point of sweep in mA
-            stop (number): sweep does not include this value in mA
-            step (number): size of step in mA
-            seconds (number): time between steps
+            start (number): Starting point of sweep in mA.
+            stop (number): Sweep does not include this value in mA.
+            step (number): Size of step in mA.
+            seconds (number): Time between steps.
         """
         assert isinstance(seconds, int) or isinstance(
             seconds, float
@@ -229,12 +229,12 @@ class Lightwave3220:
             time.sleep(seconds)
 
     def switch_off(self):
-        """Switches the current source off
+        """Switches the current source off.
         """
         self.inst.write("LAS:OUT 0")
 
     def close(self):
-        """Close instrument and resource manager
+        """Closes instrument and resource manager.
         """
         self.inst.close()
         self.rm.close()
@@ -242,7 +242,7 @@ class Lightwave3220:
 
 class AnritsuMS9740A:
     def __init__(self, address=None):
-        """Initializes object to communicate with Anritsu MS9740A
+        """Initializes object to communicate with Anritsu MS9740A.
 
         If no address is specified, __init__ will look through all the
         avaliable addresses to find the device, otherwise, it will check
@@ -250,7 +250,7 @@ class AnritsuMS9740A:
 
         Args:
             address (str): GPIB address of the device, e.g.
-                "GPIB1::1::INSTR"
+                "GPIB1::1::INSTR".
         """
         # open resource manager
         self.rm = visa.ResourceManager()
@@ -278,7 +278,7 @@ class AnritsuMS9740A:
             self.inst = None
 
     def set_x(self, center=None, span=None, start=None, stop=None):
-        """Sets parameters (in nm) related to x axis
+        """Sets parameters (in nm) related to x axis.
 
         Any one of these can be used, and the later parameters will
         overwrite the previous parameters.
@@ -308,14 +308,14 @@ class AnritsuMS9740A:
             self.inst.write("STO {}".format(stop))
 
     def set_y(self, db_per_div=None, ref=None):
-        """Sets parameter related to y axis
+        """Sets parameter related to y axis.
 
         args:
-            db_per_div (number): distance between divs, in dB. Must be
-                between 0.1 and 10
-            ref (number): at the time of setting the Log scale, this
+            db_per_div (number): Distance between divs, in dB. Must be
+                between 0.1 and 10.
+            ref (number): At the time of setting the Log scale, this
                 command sets the reference level. Must be between -100
-                and 100
+                and 100.
         """
         if db_per_div:
             assert 0.1 <= db_per_div <= 10, "Parameter outside supported range"
@@ -328,11 +328,11 @@ class AnritsuMS9740A:
             self.inst.write("RLV {}".format(ref))
 
     def set_resolution(self, resolution):
-        """Sets resolution
+        """Sets resolution.
 
         args:
-            resolution (float): resolution in nm must be only one of the
-                following: 0.03|0.05|0.07|0.1|0.2|0.5|1.0
+            resolution (float): Resolution in nm must be only one of the
+                following: 0.03|0.05|0.07|0.1|0.2|0.5|1.0.
         """
         allowed_resolutions = (0.03, 0.05, 0.07, 0.1, 0.2, 0.5, 1.0)
 
@@ -343,12 +343,12 @@ class AnritsuMS9740A:
         self.inst.write("RES {}".format(resolution))
 
     def set_VBW(self, VBW):
-        """Sets VBW (video band width)
+        """Sets VBW (video band width).
 
         args:
             VBW (int or str): VBW in Hz, must be one of the following:
                 10|100|200|1000|2000|10000|100000|1000000, or
-                10HZ|100HZ|200HZ|1KHZ|2KHZ|10KHZ|100KHZ|1MHZ
+                10HZ|100HZ|200HZ|1KHZ|2KHZ|10KHZ|100KHZ|1MHZ.
         """
         allowed_VBW = (
             10,
@@ -376,7 +376,7 @@ class AnritsuMS9740A:
         self.inst.write("VBW {}".format(VBW))
 
     def set_sampling_points(self, n):
-        """Sets the number of sampling points
+        """Sets the number of sampling points.
 
         args:
             n (int): number of sampling points, must be one of the
@@ -389,12 +389,12 @@ class AnritsuMS9740A:
         self.inst.write("MPT {}".format(n))
 
     def ana_rms(self, spectrum_level, spectrum_deviation_factor):
-        """Executes the RMS spectrum analysis method
+        """Executes the RMS spectrum analysis method.
 
         args:
-            spectrum_level (number): in dB, between 0.1 and 50.0
+            spectrum_level (number): In dB, between 0.1 and 50.0.
             spectrum_deviation_factor (number): K: Standard deviation
-                factor, between 1.0 and 10.0
+                factor, between 1.0 and 10.0.
 
         returns:
             List[float, float, float]:
@@ -424,19 +424,19 @@ class AnritsuMS9740A:
         return res
 
     def screen_capture(self):
-        """Takes a single sweep of the screen content and returns
+        """Takes a single sweep of the screen content and returns.
 
         returns:
-            List[float]: each number is a sample at a wavelength,
+            List[float]: Each number is a sample at a wavelength,
                 depending on set_x, and length depends on
-                set_sampling_points
+                set_sampling_points.
         """
         self.inst.write("SSI; *WAI")
         res = self.inst.query("DMA?")
         return [float(i) for i in res.split()]
 
     def close(self):
-        """Close instrument and resource manager
+        """Closes instrument and resource manager
         """
         self.inst.close()
         self.rm.close()
@@ -444,7 +444,7 @@ class AnritsuMS9740A:
 
 class TektronixAWG7122B:
     def __init__(self, address=None):
-        """Initializes object to communicate with Tektronix AWG7122B
+        """Initializes object to communicate with Tektronix AWG7122B.
 
         If no address is specified, __init__ will look through all the
         avaliable addresses to find the device, otherwise, it will check
@@ -452,7 +452,7 @@ class TektronixAWG7122B:
 
         Args:
             address (str): GPIB address of the device, e.g.
-                "GPIB1::1::INSTR"
+                "GPIB1::1::INSTR".
         """
         # open resource manager
         self.rm = visa.ResourceManager()
@@ -494,25 +494,25 @@ class TektronixAWG7122B:
         name="konrad",
         suppress_messages=False,
     ):
-        """Sends a waveform to the device and turns on specified channel
+        """Sends waveform to the device and turns on specified channel.
 
         args:
-            signal (Any[float]): list of at least 1 float values, each
+            signal (Any[float]): List of at least 1 float values, each
                 value must be between -1 and 1, where the max values are
-                equivalent to max set amplitude
-            markers (Any[int]): list of integers, either 0 or 1, which
+                equivalent to max set amplitude.
+            markers (Any[int]): List of integers, either 0 or 1, which
                 will determine if the markers are high or low. For now,
                 this code supports setting both markers to the same
-                value only. Must be the same length as signal
-            sampling_freq (int): sampling frequency for the AWG.
+                value only. Must be the same length as signal.
+            sampling_freq (int): Sampling frequency for the AWG.
                 Combined with the length of signal, it determines the
                 output signal frequency, i.e.
                 output_frequency = sampling_frequency/len(signal)
-                Must be between 10 MHz and 12 GHz
-            name (str): name of the waveform
-            amplitude (number): sets Vpp range of the signal. E.g. if
+                Must be between 10 MHz and 12 GHz.
+            name (str): Name of the waveform.
+            amplitude (number): Sets Vpp range of the signal. E.g. if
                 signal is [0.0, 1.0] and amplitude is 0.5, the output
-                signal will be [0.0 V, 0.25 V]
+                signal will be [0.0 V, 0.25 V].
             suppress_messages (bool): If True, info and warning messages
                 will not be shown.
         """
@@ -600,7 +600,7 @@ class TektronixAWG7122B:
             )
 
     def restore_defaults(self):
-        """Sends *CLS and *RST to the device, restoring most defaults
+        """Sends *CLS and *RST to the device, restoring most defaults.
 
         The *CLS command clears the following:
         - error queue,
@@ -616,7 +616,7 @@ class TektronixAWG7122B:
         return self.inst.query("SYSTem:ERRor?")
 
     def close(self):
-        """Close instrument and resource manager
+        """Closes instrument and resource manager.
         """
         self.inst.close()
         self.rm.close()
@@ -624,7 +624,7 @@ class TektronixAWG7122B:
 
 class Agilent8156A:
     def __init__(self, address=None):
-        """Initializes object to communicate with Agilent 8156A
+        """Initializes object to communicate with Agilent 8156A.
 
         If no address is specified, __init__ will look through all the
         avaliable addresses to find the device, otherwise, it will check
@@ -632,7 +632,7 @@ class Agilent8156A:
 
         Args:
             address (str): GPIB address of the device, e.g.
-                "GPIB1::1::INSTR"
+                "GPIB1::1::INSTR".
         """
         # open resource manager
         self.rm = visa.ResourceManager()
@@ -660,7 +660,7 @@ class Agilent8156A:
             self.inst = None
 
     def restore_defaults(self):
-        """Sends *CLS and *RST to the device, restoring most defaults
+        """Sends *CLS and *RST to the device, restoring most defaults.
 
         The *CLS command clears the following:
         - error queue,
@@ -672,13 +672,13 @@ class Agilent8156A:
         self.inst.write("*RST")
 
     def set_wavelength(self, wavelength):
-        """Sets the wavelength for the instrument
+        """Sets the wavelength for the instrument.
 
         The value is used to make the compensation for the wavelength
         dependence of the filter, using the wavelength calibration data.
 
         args:
-            wavelength (number): wavelength in nm (from 1200 to 1650)
+            wavelength (number): Wavelength in nm (from 1200 to 1650).
         """
         assert isinstance(wavelength, (int, float)), "wavelength must be a number"
         assert 1200 <= wavelength <= 1650, "wavelength must be between 1200 and 1650"
@@ -686,41 +686,41 @@ class Agilent8156A:
         self.inst.write("INPut:WAVelength {}nm".format(wavelength))
 
     def set_calibration_factor(self, calib=2.9):
-        """Sets the calibration factor for the instrument
+        """Sets the calibration factor for the instrument.
 
         args:
-            calib (number): calibration factor in dB
+            calib (number): Calibration factor in dB.
         """
         assert isinstance(calib, (int, float)), "calib must be a number"
 
         self.inst.write("INPut:OFFSet {}".format(calib))
 
     def get_calibration_factor(self):
-        """Return the calibration factor
+        """Return the calibration factor.
 
         returns:
-            float: calibration factor in dB
+            float: Calibration factor in dB.
         """
 
         return float(self.inst.query("INPut:OFFSet?").strip())
 
     def switch_output(self, state):
-        """Opens or closes shutter
+        """Opens or closes shutter.
 
         args:
             state (bool): True opens the shutter (laser goes through),
-                while False closes it (no light passes through)
+                while False closes it (no light passes through).
         """
         assert isinstance(state, bool), "state must be a bool"
 
         self.inst.write("OUTPut:STATe {}".format(int(state)))
 
     def set_output(self, attenuation):
-        """Sets the output attenuation (without changing shutter)
+        """Sets the output attenuation (without changing shutter).
 
         args:
-            attenuation (number): attenuation in dB, cannot be lower
-                than calibration_factor
+            attenuation (number): Attenuation in dB, cannot be lower
+                than calibration_factor.
         """
         assert isinstance(attenuation, (int, float)), "attenuation must be a number"
         assert (
@@ -730,13 +730,13 @@ class Agilent8156A:
         self.inst.write("INPut:ATTenuation {}".format(attenuation))
 
     def sweep(self, start, stop, step, seconds):
-        """Sweeps the attenuation
+        """Sweeps the attenuation.
 
         args:
             start (number)
             stop (number)
-            step (number): change between steps
-            seconds (number): delay between steps
+            step (number): Change between steps.
+            seconds (number): Delay between steps.
         """
         self.set_output(start)
         self.switch_output(True)
@@ -746,7 +746,7 @@ class Agilent8156A:
             time.sleep(seconds)
 
     def close(self):
-        """Close instrument and resource manager
+        """Closes instrument and resource manager.
         """
         self.inst.close()
         self.rm.close()
@@ -754,7 +754,7 @@ class Agilent8156A:
 
 class Agilent86100C:
     def __init__(self, address=None):
-        """Initializes object to communicate with Agilent 86100C
+        """Initializes object to communicate with Agilent 86100C.
 
         If no address is specified, __init__ will look through all the
         avaliable addresses to find the device, otherwise, it will check
@@ -762,7 +762,7 @@ class Agilent86100C:
 
         Args:
             address (str): GPIB address of the device, e.g.
-                "GPIB1::1::INSTR"
+                "GPIB1::1::INSTR".
         """
         # open resource manager
         self.rm = visa.ResourceManager()
@@ -792,7 +792,7 @@ class Agilent86100C:
             self.inst = None
 
     def restore_defaults(self):
-        """Sends *CLS and *RST to the device, restoring most defaults
+        """Sends *CLS and *RST to the device, restoring most defaults.
 
         The *CLS clears all status and error registers
         *RST clears most parameters apart from the GPIB settings.
@@ -801,7 +801,7 @@ class Agilent86100C:
         self.inst.write("*RST")
 
     def autoscale(self):
-        """Evaluates the current input signal, autoscales, prints result
+        """Evaluates current input signal, autoscales, prints result.
 
         Autoscale sets the following:
         • Channel Display, Scale, and Offset
@@ -817,10 +817,10 @@ class Agilent86100C:
         print(self.inst.query("AUToscale?"))
 
     def set_trigger(self, source="RMODule", level=10e-3):
-        """Sets parameters related to trigger
+        """Sets parameters related to trigger.
 
         args:
-            source (str): one of FPANel, FRUN, LMODule, RMODule
+            source (str): One of FPANel, FRUN, LMODule, RMODule.
             level (number)
         """
         assert source in (
@@ -835,7 +835,7 @@ class Agilent86100C:
         self.inst.write("TRIGger:LEVel {}".format(level))
 
     def set_timebase(self, position=None, range_=None, reference=None):
-        """Sets parameters related to timebase
+        """Sets parameters related to timebase.
 
         args:
             position (number): in seconds - Sets the time interval
@@ -844,14 +844,14 @@ class Agilent86100C:
                 TIMebase:REFerence command. The <position_value>
                 argument’s maximum value depends on the
                 time-per-division setting. Must be greater or equal
-                2.4e-8
+                2.4e-8.
             range_ (number): Sets the full-scale horizontal time in
                 seconds. The range value is ten times the
                 time-per-division value. Range is always set in units of
                 time (seconds), not in bits. <full_scale_range> is the
                 full-scale horizontal time in seconds.
             reference (str): Sets the delay reference to the left or
-                center side of the display. Must be "left" or "center"
+                center side of the display. Must be "left" or "center".
         """
         if position is not None:
             assert isinstance(position, (int, float)), "position must be a number"
@@ -871,18 +871,18 @@ class Agilent86100C:
             self.inst.write("TIMebase:REFerence {}".format(reference))
 
     def set_acquire(self, average=None, count=None, points=None):
-        """Sets parameters related to acquiring data
+        """Sets parameters related to acquiring data.
 
         args:
             average (bool): Enables or disables averaging. When ON, the
                 analyzer acquires multiple data values for each time
                 bucket, and averages them. When OFF, averaging is
-                disabled. To set the number of averages, use param count
+                disabled. To set number of averages, use param count.
             count (int): Sets the number of averages for the waveforms.
                 Specifies the number of data values to be averaged for
                 each time bucket before the acquisition is considered
                 complete for that time bucket. count must be from 1 to
-                4096
+                4096.
             points (int or str): Sets the requested memory depth for an
                 acquisition. You can set the points value to AUTO, which
                 allows the analyzer to select the number of points based
@@ -906,7 +906,7 @@ class Agilent86100C:
             self.inst.write("ACQuire:POINts {}".format(points))
 
     def set_channel(self, channel=4, display=None, offset=None, range_=None):
-        """Sets parameters related to channels (and y-axis)
+        """Sets parameters related to channels (and y-axis).
 
         args:
             channel (int): Channel to configure.
@@ -954,7 +954,7 @@ class Agilent86100C:
         return self.inst.query("SYSTem:ERRor?")
 
     def close(self):
-        """Close instrument and resource manager
+        """Closes instrument and resource manager.
         """
         self.inst.close()
         self.rm.close()
