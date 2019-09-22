@@ -241,10 +241,13 @@ def eaSimple(
     if verbose:
         print(logbook.stream)
 
+    plt.figure()
+    plt.xlabel("Generation")
+    plt.ylabel("Fitness")
     # Begin the generational process
     try:
         for gen in range(1, ngen + 1):
-            print(gen)
+            print("Generation {}".format(gen))
             # Select the next generation individuals
             offspring = toolbox.select(population, len(population))
 
@@ -269,8 +272,11 @@ def eaSimple(
             logbook.record(gen=gen, nevals=len(invalid_ind), **record)
             if verbose:
                 print(logbook.stream)
+            plt.scatter(gen, logbook.select("min_fitness")[-1], c='blue')
+            plt.pause(0.05)
     except KeyboardInterrupt:
-        pass
+        time.sleep(2)
+        print("Execution interrupted. You can still retrieve the data.")
 
     return population, logbook
 
@@ -359,6 +365,7 @@ class SimulationOptimization:
         )
 
         gen, min_, = self.logbook.select("gen", "min_fitness")
+        plt.figure()
         plt.plot(gen, min_, label="minimum")
         plt.xlabel("Generation")
         plt.ylabel("Fitness")
@@ -367,7 +374,7 @@ class SimulationOptimization:
 
 
 if __name__ == "__main__":
-    x = SimulationOptimization(pop_size=30, ngen=10)
+    x = SimulationOptimization(pop_size=30, ngen=20)
     x.run()
     input()
 
