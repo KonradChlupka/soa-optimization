@@ -131,9 +131,25 @@ def simulation_fitness(U, T, X0, trans_func):
         (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
         t = rise_time(T, yout)
         mse = mean_squared_error(yout, 110, 240)
-        print(t)
-        return (t,)
+        # print(mse)
+        return (mse,)
 
+def best_of_population(population):
+    """Finds the best individual in a population.
+
+    Assumes that lower fitness equals better.
+
+    Args:
+        population (Tuple[List[float]]):
+    
+    Returns:
+        List[float]: Best individual in a population.
+    """
+    best_fitness = float("inf")
+    for ind in population:
+        if ind.fitness.values[0] < best_fitness:
+            best_ind = ind
+    return best_ind
 
 class SimulationOptimization:
     def __init__(
@@ -202,21 +218,23 @@ class SimulationOptimization:
     def run(self):
         self.pop = self.toolbox.population()
         self.hof = tools.HallOfFame(1)
-        self.stats = tools.Statistics(lambda ind: ind.fitness.values)
-        self.stats.register("avg", np.mean)
-        self.stats.register("min", np.min)
-        self.stats.register("max", np.max)
+        self.stats = tools.Statistics()
+        self.stats.register("min_per_population", best_of_population)
+        self.stats.register(
+            "min_fitness", lambda pop: np.min([ind.fitness.values for ind in pop])
+        )
 
         self.pop, self.logbook = self.toolbox.eaSimple(
             self.pop, self.toolbox, stats=self.stats, halloffame=self.hof, verbose=False
         )
 
         print(
-            "Best individual is: %s\nwith fitness: %s"
-            % (self.hof[0], self.hof[0].fitness)
+            "Best individual is: {}\nwith fitness: {}".format(
+                self.hof[0], self.hof[0].fitness
+            )
         )
 
-        gen, avg, min_, max_ = self.logbook.select("gen", "avg", "min", "max")
+        gen, min_, = self.logbook.select("gen", "min_fitness")
         plt.plot(gen, min_, label="minimum")
         plt.xlabel("Generation")
         plt.ylabel("Fitness")
@@ -225,7 +243,7 @@ class SimulationOptimization:
 
 
 if __name__ == "__main__":
-    x = SimulationOptimization()
+    x = SimulationOptimization(pop_size=30, ngen=10)
     x.run()
     input()
 
