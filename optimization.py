@@ -1,6 +1,10 @@
 import random
 import time
 import multiprocessing
+import sys
+import threading
+import ctypes
+import select
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -132,7 +136,7 @@ def simulation_fitness(U, T, X0, trans_func):
         t = rise_time(T, yout)
         mse = mean_squared_error(yout, 110, 240)
         # print(mse)
-        return (t,)
+        return (mse,)
 
 
 def best_of_population(population):
@@ -151,6 +155,22 @@ def best_of_population(population):
         if ind.fitness.values[0] < best_fitness:
             best_ind = ind
     return best_ind
+
+
+def quitting_thread(newstdin, flag):
+    """Used as a thread scanning for "q" from sys.stdin.
+    TODO: improve docu
+    """
+    while not flag.is_set():
+        print(flag.is_set())
+        if newstdin.readline().strip() == "q":
+            print(
+                "Evolution will end after the calculations for "
+                "the current population are finished..."
+            )
+            break
+        time.sleep(0.2)
+    print(flag.is_set())
 
 
 def eaSimple(
@@ -245,7 +265,12 @@ def eaSimple(
     plt.ylim((-10, -10 + 1e-10), auto=True)
     plt.xlabel("Generation")
     plt.ylabel("Fitness")
+
+    flag = threading.Event()
+    thread = threading.Thread(target=quitting_thread, args=(sys.stdin, flag))
+    thread.start()
     # Begin the generational process
+    print("Begin the generational process. Input 'q' to finish early.")
     for gen in range(1, ngen + 1):
         print("Generation {}".format(gen))
         # Select the next generation individuals
@@ -274,7 +299,15 @@ def eaSimple(
             print(logbook.stream)
         plt.scatter(gen, logbook.select("min_fitness")[-1], c="blue")
         plt.pause(0.05)
-
+        if not thread.is_alive():
+            print("Evolution finished early. {} out of {} done.".format(gen, ngen))
+            break
+    print("Is alive?", thread.is_alive())
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+        ctypes.c_long(thread.ident), ctypes.py_object(SystemExit)
+    )
+    print("Is alive?", thread.is_alive())
+    print(res)
     return population, logbook
 
 
@@ -373,7 +406,7 @@ class SimulationOptimization:
 if __name__ == "__main__":
     x = SimulationOptimization(pop_size=100, ngen=500, mutpb=0.2, indpb=0.2)
     x.run()
-    input()
+    # input()
 
 
 def soa_optimization():
