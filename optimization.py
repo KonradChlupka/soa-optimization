@@ -380,7 +380,13 @@ class SimulationOptimization:
         self.toolbox.register("eaSimple", eaSimple, cxpb=cxpb, mutpb=mutpb, ngen=ngen, interactive=interactive, show_plotting=show_plotting)
         # fmt: on
 
-    def run(self):
+    def run(self, show_final_plot=True):
+        """Runs the optimization.
+
+        Args:
+            show_final_plot (bool): If True, will show a plot with
+                the fitness over the generations.
+        """
         self.pop = self.toolbox.population()
         self.hof = tools.HallOfFame(1)
         self.stats = tools.Statistics()
@@ -400,12 +406,13 @@ class SimulationOptimization:
         )
 
         gen, min_, = self.logbook.select("gen", "min_fitness")
-        plt.figure()
-        plt.plot(gen, min_, label="minimum")
-        plt.xlabel("Generation")
-        plt.ylabel("Fitness")
-        plt.legend(loc="lower right")
-        plt.show()
+        if show_final_plot:
+            plt.figure()
+            plt.plot(gen, min_, label="minimum")
+            plt.xlabel("Generation")
+            plt.ylabel("Fitness")
+            plt.legend(loc="lower right")
+            plt.show()
 
 
 if __name__ == "__main__":
@@ -421,7 +428,7 @@ if __name__ == "__main__":
         interactive=True,
         show_plotting=True,
     )
-    x.run()
+    x.run(show_final_plot=True)
 
 
 def soa_optimization():
