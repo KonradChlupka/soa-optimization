@@ -3,8 +3,6 @@ import time
 import multiprocessing
 import sys
 import threading
-import ctypes
-import select
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,6 +14,7 @@ from scipy import signal
 
 import devices
 
+# random.seed(0)
 
 def find_x_init(trans_func):
     """Calculates the state-vector resulting from long -1 input.
@@ -136,7 +135,7 @@ def simulation_fitness(U, T, X0, trans_func):
         t = rise_time(T, yout)
         mse = mean_squared_error(yout, 110, 240)
         # print(mse)
-        return (mse,)
+        return (t,)
 
 
 def best_of_population(population):
@@ -162,7 +161,6 @@ def quitting_thread(newstdin, flag):
     TODO: improve docu
     """
     while not flag.is_set():
-        print(flag.is_set())
         if newstdin.readline().strip() == "q":
             print(
                 "Evolution will end after the calculations for "
@@ -170,7 +168,6 @@ def quitting_thread(newstdin, flag):
             )
             break
         time.sleep(0.2)
-    print(flag.is_set())
 
 
 def eaSimple(
@@ -302,12 +299,8 @@ def eaSimple(
         if not thread.is_alive():
             print("Evolution finished early. {} out of {} done.".format(gen, ngen))
             break
-    print("Is alive?", thread.is_alive())
-    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
-        ctypes.c_long(thread.ident), ctypes.py_object(SystemExit)
-    )
-    print("Is alive?", thread.is_alive())
-    print(res)
+    flag.set()
+    thread.join()
     return population, logbook
 
 
@@ -404,7 +397,7 @@ class SimulationOptimization:
 
 
 if __name__ == "__main__":
-    x = SimulationOptimization(pop_size=100, ngen=500, mutpb=0.2, indpb=0.2)
+    x = SimulationOptimization(pop_size=60, ngen=20, mutpb=0.05, indpb=0.05, sigma=0.01)
     x.run()
     # input()
 
