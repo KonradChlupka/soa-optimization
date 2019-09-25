@@ -16,6 +16,7 @@ import devices
 
 random.seed(0)
 
+
 def find_x_init(trans_func):
     """Calculates the state-vector resulting from long -1 input.
 
@@ -175,6 +176,8 @@ def eaSimple(
     ngen,
     stats=None,
     halloffame=None,
+    interactive=True,
+    show_plotting=True,
 ):
     """This algorithm reproduce the simplest evolutionary algorithm as
     presented in chapter 7 of [Back2000]_.
@@ -192,6 +195,9 @@ def eaSimple(
                   inplace, optional.
     :param halloffame: A :class:`~deap.tools.HallOfFame` object that will
                        contain the best individuals, optional.
+    :param interactive: Allows to press 'q' to stop execution, requires
+                        confirmation after finished run.
+    :param show_plotting: Shows a live plot of progress.
     :returns: The final population
     :returns: A class:`~deap.tools.Logbook` with the statistics of the
               evolution
@@ -251,16 +257,21 @@ def eaSimple(
     record = stats.compile(population) if stats else {}
     logbook.record(gen=0, nevals=len(invalid_ind), **record)
 
-    plt.figure()
-    plt.ylim((-10, -10 + 1e-10), auto=True)
-    plt.xlabel("Generation")
-    plt.ylabel("Fitness")
+    if show_plotting:
+        plt.figure()
+        plt.ylim((-10, -10 + 1e-10), auto=True)
+        plt.xlabel("Generation")
+        plt.ylabel("Fitness")
 
-    flag = threading.Event()
-    thread = threading.Thread(target=quitting_thread, args=(sys.stdin, flag))
-    thread.start()
+    if interactive:
+        flag = threading.Event()
+        thread = threading.Thread(target=quitting_thread, args=(sys.stdin, flag))
+        thread.start()
 
-    print("Begin the generational process. Input 'q' to finish early.")
+    print(
+        "Begin the generational process. "
+        "Input 'q' to finish early if you're in interactive mode."
+    )
     for gen in range(1, ngen + 1):
         print("Starting generation {}".format(gen))
         # Select the next generation individuals
@@ -286,14 +297,17 @@ def eaSimple(
         record = stats.compile(population) if stats else {}
         logbook.record(gen=gen, nevals=len(invalid_ind), **record)
 
-        plt.scatter(gen, logbook.select("min_fitness")[-1], c="blue")
-        plt.pause(0.05)
+        if show_plotting:
+            plt.scatter(gen, logbook.select("min_fitness")[-1], c="blue")
+            plt.pause(0.05)
 
-        if not thread.is_alive():
+        if interactive and not thread.is_alive():
             print("Evolution finished early. {} out of {} done.".format(gen, ngen))
             break
-    flag.set()
-    thread.join()
+    if interactive:
+        flag.set()
+        print("Evolution finished. Press enter to continue.")
+        thread.join()
     return population, logbook
 
 
@@ -308,6 +322,8 @@ class SimulationOptimization:
         cxpb=0.6,
         mutpb=0.05,
         ngen=50,
+        interactive=True,
+        show_plotting=True,
     ):
         """Implements optimization for simulated SOA.
 
@@ -324,6 +340,9 @@ class SimulationOptimization:
             cxpb (number): The probability of mating two individuals.
             mutpb (number): The probability of mutating an individual.
             ngen (int): The number of generation.
+            interactive (bool): Allows to press 'q' to stop execution,
+                requires confirmation after finished run.
+            show_plotting (bool): Shows a live plot of progress.
         """
         # simplified tf
         num = [2.01199757841099e85]
@@ -358,7 +377,7 @@ class SimulationOptimization:
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=mu, sigma=sigma, indpb=indpb)
         self.toolbox.register("select", tools.selTournament, tournsize=tournsize)
-        self.toolbox.register("eaSimple", eaSimple, cxpb=cxpb, mutpb=mutpb, ngen=ngen)
+        self.toolbox.register("eaSimple", eaSimple, cxpb=cxpb, mutpb=mutpb, ngen=ngen, interactive=interactive, show_plotting=show_plotting)
         # fmt: on
 
     def run(self):
@@ -390,9 +409,19 @@ class SimulationOptimization:
 
 
 if __name__ == "__main__":
-    x = SimulationOptimization(pop_size=60, ngen=20, mutpb=0.05, indpb=0.05, sigma=0.01)
+    x = SimulationOptimization(
+        pop_size=100,
+        mu=0,
+        sigma=0.1,
+        indpb=0.05,
+        tournsize=3,
+        cxpb=0.6,
+        mutpb=0.05,
+        ngen=50,
+        interactive=True,
+        show_plotting=True,
+    )
     x.run()
-    # input()
 
 
 def soa_optimization():
