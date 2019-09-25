@@ -14,7 +14,7 @@ from scipy import signal
 
 import devices
 
-# random.seed(0)
+random.seed(0)
 
 def find_x_init(trans_func):
     """Calculates the state-vector resulting from long -1 input.
@@ -130,11 +130,9 @@ def simulation_fitness(U, T, X0, trans_func):
     if not valid_driver_signal(U):
         return (1000.0,)
     else:
-        # atol of 1e-21 is sufficient for a step func, original trans. func.
         (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
         t = rise_time(T, yout)
         mse = mean_squared_error(yout, 110, 240)
-        # print(mse)
         return (t,)
 
 
@@ -158,7 +156,6 @@ def best_of_population(population):
 
 def quitting_thread(newstdin, flag):
     """Used as a thread scanning for "q" from sys.stdin.
-    TODO: improve docu
     """
     while not flag.is_set():
         if newstdin.readline().strip() == "q":
@@ -178,7 +175,6 @@ def eaSimple(
     ngen,
     stats=None,
     halloffame=None,
-    verbose=__debug__,
 ):
     """This algorithm reproduce the simplest evolutionary algorithm as
     presented in chapter 7 of [Back2000]_.
@@ -196,7 +192,6 @@ def eaSimple(
                   inplace, optional.
     :param halloffame: A :class:`~deap.tools.HallOfFame` object that will
                        contain the best individuals, optional.
-    :param verbose: Whether or not to log the statistics.
     :returns: The final population
     :returns: A class:`~deap.tools.Logbook` with the statistics of the
               evolution
@@ -255,8 +250,6 @@ def eaSimple(
 
     record = stats.compile(population) if stats else {}
     logbook.record(gen=0, nevals=len(invalid_ind), **record)
-    if verbose:
-        print(logbook.stream)
 
     plt.figure()
     plt.ylim((-10, -10 + 1e-10), auto=True)
@@ -266,10 +259,10 @@ def eaSimple(
     flag = threading.Event()
     thread = threading.Thread(target=quitting_thread, args=(sys.stdin, flag))
     thread.start()
-    # Begin the generational process
+
     print("Begin the generational process. Input 'q' to finish early.")
     for gen in range(1, ngen + 1):
-        print("Generation {}".format(gen))
+        print("Starting generation {}".format(gen))
         # Select the next generation individuals
         offspring = toolbox.select(population, len(population))
 
@@ -292,10 +285,10 @@ def eaSimple(
         # Append the current generation statistics to the logbook
         record = stats.compile(population) if stats else {}
         logbook.record(gen=gen, nevals=len(invalid_ind), **record)
-        if verbose:
-            print(logbook.stream)
+
         plt.scatter(gen, logbook.select("min_fitness")[-1], c="blue")
         plt.pause(0.05)
+
         if not thread.is_alive():
             print("Evolution finished early. {} out of {} done.".format(gen, ngen))
             break
@@ -378,7 +371,7 @@ class SimulationOptimization:
         )
 
         self.pop, self.logbook = self.toolbox.eaSimple(
-            self.pop, self.toolbox, stats=self.stats, halloffame=self.hof, verbose=False
+            self.pop, self.toolbox, stats=self.stats, halloffame=self.hof
         )
 
         print(
