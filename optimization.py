@@ -14,8 +14,6 @@ from scipy import signal
 
 import devices
 
-random.seed(0)
-
 
 def find_x_init(trans_func):
     """Calculates the state-vector resulting from long -1 input.
@@ -134,7 +132,7 @@ def simulation_fitness(U, T, X0, trans_func):
         (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
         t = rise_time(T, yout)
         mse = mean_squared_error(yout, 110, 240)
-        return (t,)
+        return (mse,)
 
 
 def best_of_population(population):
@@ -372,7 +370,7 @@ class SimulationOptimization:
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
-        self.toolbox.register("map", multiprocessing.Pool(processes=pop_size).map)
+        self.toolbox.register("map", multiprocessing.Pool().map)
         self.toolbox.register("evaluate", simulation_fitness, T=self.T, X0=self.X0, trans_func=self.trans_func)
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=mu, sigma=sigma, indpb=indpb)
@@ -413,22 +411,86 @@ class SimulationOptimization:
             plt.ylabel("Fitness")
             plt.legend(loc="lower right")
             plt.show()
+            plt.pause(0.05)
+
+
+def main_optimizer(optimizing, range_):
+    default_args = {
+        "pop_size": 100,
+        "mu": 0,
+        "sigma": 0.1,
+        "indpb": 0.05,
+        "tournsize": 3,
+        "cxpb": 0.6,
+        "mutpb": 0.05,
+    }
+    tot_evals = 80000
+
+    pop_size = default_args["pop_size"]
+    mu = default_args["mu"]
+    sigma = default_args["sigma"]
+    indpb = default_args["indpb"]
+    tournsize = default_args["tournsize"]
+    cxpb = default_args["cxpb"]
+    mutpb = default_args["mutpb"]
+
+    for i in range_:
+        random.seed(0)
+        if optimizing == "pop_size":
+            pop_size = i
+        elif optimizing == "mu":
+            mu = i
+        elif optimizing == "sigma":
+            sigma = i
+        elif optimizing == "indpb":
+            indpb = i
+        elif optimizing == "tournsize":
+            tournsize = i
+        elif optimizing == "cxpb":
+            cxpb = i
+        elif optimizing == "mutpb":
+            mutpb = i
+
+        ngen = tot_evals // pop_size
+        print(
+            "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
+                optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
+            )
+        )
+
+        x = SimulationOptimization(
+            pop_size=pop_size,
+            mu=mu,
+            sigma=sigma,
+            indpb=indpb,
+            tournsize=tournsize,
+            cxpb=cxpb,
+            mutpb=mutpb,
+            ngen=ngen,
+            interactive=False,
+            show_plotting=False,
+        )
+        x.run(show_final_plot=True)
+        plt.ylim((0.9, 1.11))
+        plt.pause(0.5)
+        plt.savefig(
+            "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
+                optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
+            )
+        )
+        plt.pause(0.5)
+        plt.close()
+        plt.pause(0.5)
+        del x
 
 
 if __name__ == "__main__":
-    x = SimulationOptimization(
-        pop_size=100,
-        mu=0,
-        sigma=0.1,
-        indpb=0.05,
-        tournsize=3,
-        cxpb=0.6,
-        mutpb=0.05,
-        ngen=50,
-        interactive=True,
-        show_plotting=True,
-    )
-    x.run(show_final_plot=True)
+    main_optimizer("pop_size", [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100])
+    main_optimizer("sigma", [0.05, 0.1, 0.15, 0.2, 0.25, 0.3])
+    main_optimizer("indpb", [0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2])
+    main_optimizer("tournsize", [2, 3, 4, 5, 6, 7, 8])
+    main_optimizer("cxpb", [0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95])
+    main_optimizer("mutpb", [0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2])
 
 
 def soa_optimization():
