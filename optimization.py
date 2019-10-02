@@ -551,7 +551,7 @@ class SOAOptimization:
         else:
             expanded_U = [-1.0] * 100 + list(U) + [1.0] * 100
             self.awg.send_waveform(expanded_U, suppress_messages=True)
-            time.sleep(3)
+            time.sleep(4)
             result = self.osc.measurement(channel=1)
             return (rise_time(self.T, result, n_steady_state=500),)
 
