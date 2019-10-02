@@ -30,22 +30,24 @@ def find_x_init(trans_func):
     return xout[-1]
 
 
-def rise_time(T, yout):
+def rise_time(T, yout, n_steady_state=24):
     """Calculates 10% - 90% rise time.
 
     The supplied signal must contain only the rising edge, and the
     rise time is calculated by comparing to the average of the last
-    24 points of the signal.
+    n_steady_state points of the signal.
 
     Args:
         T (np.ndarray[float])
         yout (np.ndarray[float]): System's response. Must be same
             length as T.
+        n_steady_state (int): Number of points taken from the end of
+            the signal used to calculate steady-state.
 
     Returns:
         float: Rise time. 1000.0 if cannot be found.
     """
-    ss = np.mean(yout[-24:])  # steady-state
+    ss = np.mean(yout[-n_steady_state:])  # steady-state
     start = yout[0]
     start_to_ss = ss - start  # amplitude difference
     ss_90 = start + 0.9 * start_to_ss
@@ -484,155 +486,112 @@ def main_optimizer(optimizing, range_):
         del x
 
 
-if __name__ == "__main__":
-    main_optimizer("pop_size", [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100])
-    main_optimizer("sigma", [0.05, 0.1, 0.15, 0.2, 0.25, 0.3])
-    main_optimizer("indpb", [0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2])
-    main_optimizer("tournsize", [2, 3, 4, 5, 6, 7, 8])
-    main_optimizer("cxpb", [0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95])
-    main_optimizer("mutpb", [0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2])
 
 
-def soa_optimization():
-    """TODO: cleanup and docu
-    """
-
-    def waveform_delay(original, delayed):
-        """Calculates index delay between signals.
-
-        Requires that 'delayed' is the same signal as 'original' (or
-        slightly changed due to ringing etc.), 'delayed' is inverted,
-        falling edge of both signals is visible, at least one full
-        period of each is visible, a centered square wave from -1 to 1
-        is sent, and 'original' on the left side of the screen is high
-        and close to the falling edge.
+class SOAOptimization:
+    def __init__(
+        self,
+        pop_size=60,
+        mu=0,
+        sigma=0.15,
+        indpb=0.06,
+        tournsize=4,
+        cxpb=0.9,
+        mutpb=0.3,
+        ngen=800,
+        interactive=True,
+        show_plotting=True,
+    ):  # TODO: change defaults
+        """Implements optimization for real SOA.
 
         Args:
-            original (List or np.array)
-            delayed (List or np.array)
-
-        Returns:
-            int: Index offset between delayed and original.
+            pop_size (int): Populaiton size (number of individuals in
+                each generation).
+            mu (number): Mean for the gaussian addition mutation.
+            sigma (number): Standard deviation for the gaussian addition
+                mutation.
+            indpb (number): Independent probability for each attribute
+                to be mutated.
+            tournsize (int): The number of individuals participating in
+                each tournament.
+            cxpb (number): The probability of mating two individuals.
+            mutpb (number): The probability of mutating an individual.
+            ngen (int): The number of generation.
+            interactive (bool): Allows to press 'q' to stop execution,
+                requires confirmation after finished run.
+            show_plotting (bool): Shows a live plot of progress.
         """
-        input(
-            "Make sure the signals are positioned correctly for "
-            "measurement. Refer to documentation of waveform_delay(). "
-            "Press Enter..."
+        self.awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
+        self.osc = devices.Agilent86100C("GPIB1::7::INSTR")
+
+        # setup oscilloscope for measurement  # TODO: confirm these
+        self.osc.set_acquire(average=True, count=30, points=1350)
+        self.osc.set_timebase(position=2.4e-8, range_=12e-9)
+        self.T = np.linspace(start=0, stop=12e-9, num=1350)
+
+        creator.create("Fitness", base.Fitness, weights=(-1.0,))
+        creator.create("Individual", list, fitness=creator.Fitness)
+
+        self.toolbox = base.Toolbox()
+        initial = [random.uniform(-1, 1) for _ in range(40)]
+        # fmt: off
+        self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
+        self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
+        self.toolbox.register("evaluate", SOA_fitness)
+        self.toolbox.register("mate", tools.cxTwoPoint)
+        self.toolbox.register("mutate", tools.mutGaussian, mu=mu, sigma=sigma, indpb=indpb)
+        self.toolbox.register("select", tools.selTournament, tournsize=tournsize)
+        self.toolbox.register("eaSimple", eaSimple, cxpb=cxpb, mutpb=mutpb, ngen=ngen, interactive=interactive, show_plotting=show_plotting)
+        # fmt: on
+
+    def valid_U(self, U):
+        # TODO: docu
+        return all(i > -1.0 for i in U) and all(i < 1.0 for i in U)
+
+    def SOA_fitness(self, U):
+        if not self.valid_U(U):
+            return (1000.0,)
+        else:
+            expanded_U = [-1.0] * 100 + list(U) + [1.0] * 100
+            self.awg.send_waveform(expanded_U, suppress_messages=True)
+            time.sleep(3)
+            result = self.osc.measurement(channnel=1)
+            return (rise_time(self.T, result, n_steady_state=500),)
+
+    def run(self, show_final_plot=True):
+        """Runs the optimization.
+
+        Args:
+            show_final_plot (bool): If True, will show a plot with
+                the fitness over the generations.
+        """
+        self.pop = self.toolbox.population()
+        self.hof = tools.HallOfFame(1)
+        self.stats = tools.Statistics()
+        self.stats.register("min_per_population", best_of_population)
+        self.stats.register(
+            "min_fitness", lambda pop: np.min([ind.fitness.values for ind in pop])
         )
 
-        on_top = False
-        for idx, el in enumerate(original):
-            if el > 0:
-                on_top = True
-            if el < 0 and on_top is True:
-                orig_crossover_idx = idx
-                break
+        self.pop, self.logbook = self.toolbox.eaSimple(
+            self.pop, self.toolbox, stats=self.stats, halloffame=self.hof
+        )
 
-        on_top = False
-        delayed = -1 * np.array(delayed)
-        for idx, el in enumerate(delayed):
-            if el > 0:
-                on_top = True
-            if el < 0 and on_top is True:
-                delayed_crossover_idx = idx
-                break
-
-        if orig_crossover_idx > delayed_crossover_idx:
-            raise ValueError(
-                "Delayed signal seems to be before original, check if "
-                "the signal is compliant with requirements in "
-                "waveform_delay"
+        print(
+            "Best individual is: {}\nwith fitness: {}".format(
+                self.hof[0], self.hof[0].fitness
             )
-        delay = delayed_crossover_idx - orig_crossover_idx
-        print("Detected delay of {} points.".format(delay))
-        return delay
-
-    awg = TektronixAWG7122B("GPIB1::1::INSTR")
-    osc = Agilent86100C("GPIB1::7::INSTR")
-
-    # setup oscilloscope for measurement
-    osc.set_acquire(average=True, count=50, points=1350)
-    osc.set_timebase(position=2.4e-8, range_=30e-9)
-
-    # get delay between signals
-    awg.send_waveform(np.array([-1.0] * 120 + [1.0] * 120), suppress_messages=True)
-    time.sleep(4)
-    orig = osc.measurement(4)
-    delayed = np.array(osc.measurement(1))
-    delayed = delayed - np.mean(delayed)
-    idx_delay = waveform_delay(orig, delayed)
-
-    def valid_U(U):
-        return (
-            all(i >= -1.0 for i in U[:30])
-            and all(i <= 1.0 for i in U[:30])
-            and all(i >= 0.5 for i in U[30:])
-            and all(i <= 1.0 for i in U[30:])
         )
 
-    def soa_fitness(U):
-        if not valid_U(U):
-            return (1.0,)
-        awg_signal = [-1.0] * 90
-        awg_signal.extend(U)
-        awg.send_waveform(awg_signal, suppress_messages=True)
-        time.sleep(4)
-        orig = osc.measurement(4)
-        delayed = np.array(osc.measurement(1))
-        delayed = delayed - np.mean(delayed)
-        del orig[-idx_delay]
-        delayed = delayed[idx_delay:]
-        orig = np.array(orig)
-        delayed = -1 * np.array(delayed)
-        rms_orig = np.sqrt(np.mean(orig ** 2))
-        rms_delayed = np.sqrt(np.mean(delayed ** 2))
-        orig_norm = orig / rms_orig
-        delayed_norm = delayed / rms_delayed
+        gen, min_, = self.logbook.select("gen", "min_fitness")
+        if show_final_plot:
+            plt.figure()
+            plt.plot(gen, min_, label="minimum")
+            plt.xlabel("Generation")
+            plt.ylabel("Fitness")
+            plt.legend(loc="lower right")
+            plt.show()
+            plt.pause(0.05)
 
-        mse = np.mean((orig_norm - delayed_norm) ** 2)
-        print(mse, U)
-
-        return (mse,)
-
-    creator.create("Fitness", base.Fitness, weights=(-1.0,))
-    creator.create("Individual", list, fitness=creator.Fitness)
-
-    toolbox = base.Toolbox()
-    initial = [0.75] * 130
-    toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
-    toolbox.register("population", tools.initRepeat, list, toolbox.ind, n=100)
-    toolbox.register("evaluate", soa_fitness)
-    toolbox.register("mate", tools.cxTwoPoint)
-    toolbox.register(
-        "mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.05
-    )  # lower mutate probs.
-    toolbox.register("select", tools.selTournament, tournsize=3)
-
-    pop = toolbox.population()
-    hof = tools.HallOfFame(1)
-    stats = tools.Statistics(lambda ind: ind.fitness.values)
-    stats.register("avg", np.mean)
-    stats.register("min", np.min)
-    stats.register("max", np.max)
-
-    pop, logbook = algorithms.eaSimple(
-        pop,
-        toolbox,
-        cxpb=0.6,  # higher
-        mutpb=0.05,
-        ngen=100,
-        stats=stats,
-        halloffame=hof,
-        verbose=False,
-    )
-
-    print("Best individual is: %s\nwith fitness: %s" % (hof[0], hof[0].fitness))
-
-    gen, avg, min_, max_ = logbook.select("gen", "avg", "min", "max")
-    # plt.plot(gen, avg, label="average")
-    plt.plot(gen, min_, label="minimum")
-    # plt.plot(gen, max_, label="maximum")
-    plt.xlabel("Generation")
-    plt.ylabel("Fitness")
-    plt.legend(loc="lower right")
-    plt.show()
+if __name__ == "__main__":
+    # main_optimizer("mutpb", [0.35, 0.4, 0.45])
