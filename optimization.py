@@ -534,7 +534,7 @@ class SOAOptimization:
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
-        self.toolbox.register("evaluate", SOA_fitness)
+        self.toolbox.register("evaluate", self.SOA_fitness)
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=mu, sigma=sigma, indpb=indpb)
         self.toolbox.register("select", tools.selTournament, tournsize=tournsize)
