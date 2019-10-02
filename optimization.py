@@ -382,13 +382,13 @@ def main_optimizer(optimizing, range_):
 class SimulationOptimization:
     def __init__(
         self,
-        pop_size=100,
+        pop_size=60,
         mu=0,
-        sigma=0.1,
-        indpb=0.05,
-        tournsize=3,
-        cxpb=0.6,
-        mutpb=0.05,
+        sigma=0.15,
+        indpb=0.06,
+        tournsize=4,
+        cxpb=0.9,
+        mutpb=0.3,
         ngen=50,
         interactive=True,
         show_plotting=True,
@@ -498,7 +498,7 @@ class SOAOptimization:
         ngen=800,
         interactive=True,
         show_plotting=True,
-    ):  # TODO: change defaults
+    ):
         """Implements optimization for real SOA.
 
         Args:
@@ -521,7 +521,7 @@ class SOAOptimization:
         self.awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
         self.osc = devices.Agilent86100C("GPIB1::7::INSTR")
 
-        # setup oscilloscope for measurement  # TODO: confirm these
+        # setup oscilloscope for measurement
         self.osc.set_acquire(average=True, count=30, points=1350)
         self.osc.set_timebase(position=2.4e-8, range_=12e-9)
         self.T = np.linspace(start=0, stop=12e-9, num=1350)
@@ -530,7 +530,7 @@ class SOAOptimization:
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = lambda: [random.uniform(-1, 1) for _ in range(40)]  # TODO: make sure first population is varied
+        initial = lambda: [random.uniform(-1, 1) for _ in range(40)]
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
@@ -542,7 +542,15 @@ class SOAOptimization:
         # fmt: on
 
     def valid_U(self, U):
-        # TODO: docu
+        """Checks if the driving signal is valid.
+
+        Args:
+            U (List[float]): Driving signal. Length is assumed to be 40,
+                and each point must be strongly between -1.0 and 1.0.
+
+        Returns:
+            bool: True is driving signal is valid, False otherwise.
+        """
         return all(i > -1.0 for i in U) and all(i < 1.0 for i in U)
 
     def SOA_fitness(self, U):
@@ -562,6 +570,7 @@ class SOAOptimization:
             show_final_plot (bool): If True, will show a plot with
                 the fitness over the generations.
         """
+        # TODO: test if 'q' to exit works as expected
         self.pop = self.toolbox.population()
         self.hof = tools.HallOfFame(1)
         self.stats = tools.Statistics()
@@ -591,6 +600,6 @@ class SOAOptimization:
             plt.pause(0.05)
 
 if __name__ == "__main__":
-    # main_optimizer("mutpb", [0.35, 0.4, 0.45])
+    # main_optimizer("mutpb", [0.3])
     x = SOAOptimization()
     x.run()
