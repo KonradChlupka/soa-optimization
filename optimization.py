@@ -530,9 +530,9 @@ class SOAOptimization:
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = [random.uniform(-1, 1) for _ in range(40)]
+        initial = lambda: [random.uniform(-1, 1) for _ in range(40)]  # TODO: make sure first population is varied
         # fmt: off
-        self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
+        self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
         self.toolbox.register("evaluate", self.SOA_fitness)
         self.toolbox.register("mate", tools.cxTwoPoint)
