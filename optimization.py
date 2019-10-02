@@ -310,6 +310,74 @@ def eaSimple(
         thread.join()
     return population, logbook
 
+def main_optimizer(optimizing, range_):
+    default_args = {
+        "pop_size": 100,
+        "mu": 0,
+        "sigma": 0.1,
+        "indpb": 0.05,
+        "tournsize": 3,
+        "cxpb": 0.6,
+        "mutpb": 0.05,
+    }
+    tot_evals = 80000
+
+    pop_size = default_args["pop_size"]
+    mu = default_args["mu"]
+    sigma = default_args["sigma"]
+    indpb = default_args["indpb"]
+    tournsize = default_args["tournsize"]
+    cxpb = default_args["cxpb"]
+    mutpb = default_args["mutpb"]
+
+    for i in range_:
+        random.seed(0)
+        if optimizing == "pop_size":
+            pop_size = i
+        elif optimizing == "mu":
+            mu = i
+        elif optimizing == "sigma":
+            sigma = i
+        elif optimizing == "indpb":
+            indpb = i
+        elif optimizing == "tournsize":
+            tournsize = i
+        elif optimizing == "cxpb":
+            cxpb = i
+        elif optimizing == "mutpb":
+            mutpb = i
+
+        ngen = tot_evals // pop_size
+        print(
+            "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
+                optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
+            )
+        )
+
+        x = SimulationOptimization(
+            pop_size=pop_size,
+            mu=mu,
+            sigma=sigma,
+            indpb=indpb,
+            tournsize=tournsize,
+            cxpb=cxpb,
+            mutpb=mutpb,
+            ngen=ngen,
+            interactive=False,
+            show_plotting=False,
+        )
+        x.run(show_final_plot=True)
+        plt.ylim((0.9, 1.11))
+        plt.pause(0.5)
+        plt.savefig(
+            "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
+                optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
+            )
+        )
+        plt.pause(0.5)
+        plt.close()
+        plt.pause(0.5)
+        del x
 
 class SimulationOptimization:
     def __init__(
@@ -414,77 +482,6 @@ class SimulationOptimization:
             plt.legend(loc="lower right")
             plt.show()
             plt.pause(0.05)
-
-
-def main_optimizer(optimizing, range_):
-    default_args = {
-        "pop_size": 100,
-        "mu": 0,
-        "sigma": 0.1,
-        "indpb": 0.05,
-        "tournsize": 3,
-        "cxpb": 0.6,
-        "mutpb": 0.05,
-    }
-    tot_evals = 80000
-
-    pop_size = default_args["pop_size"]
-    mu = default_args["mu"]
-    sigma = default_args["sigma"]
-    indpb = default_args["indpb"]
-    tournsize = default_args["tournsize"]
-    cxpb = default_args["cxpb"]
-    mutpb = default_args["mutpb"]
-
-    for i in range_:
-        random.seed(0)
-        if optimizing == "pop_size":
-            pop_size = i
-        elif optimizing == "mu":
-            mu = i
-        elif optimizing == "sigma":
-            sigma = i
-        elif optimizing == "indpb":
-            indpb = i
-        elif optimizing == "tournsize":
-            tournsize = i
-        elif optimizing == "cxpb":
-            cxpb = i
-        elif optimizing == "mutpb":
-            mutpb = i
-
-        ngen = tot_evals // pop_size
-        print(
-            "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
-                optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
-            )
-        )
-
-        x = SimulationOptimization(
-            pop_size=pop_size,
-            mu=mu,
-            sigma=sigma,
-            indpb=indpb,
-            tournsize=tournsize,
-            cxpb=cxpb,
-            mutpb=mutpb,
-            ngen=ngen,
-            interactive=False,
-            show_plotting=False,
-        )
-        x.run(show_final_plot=True)
-        plt.ylim((0.9, 1.11))
-        plt.pause(0.5)
-        plt.savefig(
-            "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
-                optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
-            )
-        )
-        plt.pause(0.5)
-        plt.close()
-        plt.pause(0.5)
-        del x
-
 
 
 
@@ -595,3 +592,5 @@ class SOAOptimization:
 
 if __name__ == "__main__":
     # main_optimizer("mutpb", [0.35, 0.4, 0.45])
+    x = SOAOptimization()
+    x.run()
