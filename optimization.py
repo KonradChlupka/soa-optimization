@@ -582,7 +582,15 @@ class SOAOptimization:
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(4)
             result = self.osc.measurement(channel=1)
-            return (rise_time(self.T, result, n_steady_state=500, self.rise_start, self.rise_end),)
+            return (
+                rise_time(
+                    self.T,
+                    result,
+                    n_steady_state=500,
+                    rise_start=self.rise_start,
+                    rise_end=self.rise_end,
+                ),
+            )
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
