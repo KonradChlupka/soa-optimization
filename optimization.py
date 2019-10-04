@@ -30,12 +30,13 @@ def find_x_init(trans_func):
     return xout[-1]
 
 
-def rise_time(T, yout, n_steady_state=24):
+def rise_time(T, yout, n_steady_state=24, rise_start=None, rise_end=None):
     """Calculates 10% - 90% rise time.
 
     The supplied signal must contain only the rising edge, and the
     rise time is calculated by comparing to the average of the last
-    n_steady_state points of the signal.
+    n_steady_state points of the signal, or if rise_start and rise_end
+    are supplied, to these points.
 
     Args:
         T (np.ndarray[float])
@@ -43,12 +44,18 @@ def rise_time(T, yout, n_steady_state=24):
             length as T.
         n_steady_state (int): Number of points taken from the end of
             the signal used to calculate steady-state.
+        rise_start (float): Value to be used as low level.
+        rise_end (float): Value to be used as high level.
 
     Returns:
         float: Rise time. 1000.0 if cannot be found.
     """
     ss = np.mean(yout[-n_steady_state:])  # steady-state
     start = yout[0]
+    if rise_start is not None:
+        start = rise_start
+    if rise_end is not None:
+        ss = rise_end
     start_to_ss = ss - start  # amplitude difference
     ss_90 = start + 0.9 * start_to_ss
     ss_10 = start + 0.1 * start_to_ss
@@ -310,15 +317,16 @@ def eaSimple(
         thread.join()
     return population, logbook
 
+
 def main_optimizer(optimizing, range_):
     default_args = {
-        "pop_size": 100,
+        "pop_size": 60,
         "mu": 0,
-        "sigma": 0.1,
-        "indpb": 0.05,
-        "tournsize": 3,
-        "cxpb": 0.6,
-        "mutpb": 0.05,
+        "sigma": 0.15,
+        "indpb": 0.06,
+        "tournsize": 4,
+        "cxpb": 0.9,
+        "mutpb": 0.3,
     }
     tot_evals = 80000
 
@@ -378,6 +386,7 @@ def main_optimizer(optimizing, range_):
         plt.close()
         plt.pause(0.5)
         del x
+
 
 class SimulationOptimization:
     def __init__(
@@ -484,18 +493,17 @@ class SimulationOptimization:
             plt.pause(0.05)
 
 
-
 class SOAOptimization:
     def __init__(
         self,
-        pop_size=60,
+        pop_size=120,
         mu=0,
         sigma=0.15,
         indpb=0.06,
         tournsize=4,
         cxpb=0.9,
-        mutpb=0.3,
-        ngen=800,
+        mutpb=0.45,
+        ngen=2000,
         interactive=True,
         show_plotting=True,
     ):
@@ -523,8 +531,15 @@ class SOAOptimization:
 
         # setup oscilloscope for measurement
         self.osc.set_acquire(average=True, count=30, points=1350)
-        self.osc.set_timebase(position=2.4e-8, range_=12e-9)
+        # self.osc.set_timebase(position=2.4e-8, range_=12e-9)
         self.T = np.linspace(start=0, stop=12e-9, num=1350)
+
+        # find rise-time ref values
+        self.awg.send_waveform([-0.75] * 120 + [0.75] * 120)
+        time.sleep(4)
+        res = self.osc.measurement(channel=1)
+        self.rise_start = res[0]
+        self.rise_end = res[-1]
 
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.Fitness)
@@ -547,21 +562,27 @@ class SOAOptimization:
         Args:
             U (List[float]): Driving signal. Length is assumed to be 40,
                 and each point must be strongly between -1.0 and 1.0.
+                The rising edge must be in the middle.
 
         Returns:
             bool: True is driving signal is valid, False otherwise.
         """
-        return all(i > -1.0 for i in U) and all(i < 1.0 for i in U)
+        return (
+            all(i > -1.0 for i in U)
+            and all(i < 1.0 for i in U)
+            and U[19] < 0
+            and U[20] > 0
+        )
 
     def SOA_fitness(self, U):
         if not self.valid_U(U):
             return (1000.0,)
         else:
-            expanded_U = [-1.0] * 100 + list(U) + [1.0] * 100
+            expanded_U = [-0.75] * 100 + list(U) + [0.75] * 100
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(4)
             result = self.osc.measurement(channel=1)
-            return (rise_time(self.T, result, n_steady_state=500),)
+            return (rise_time(self.T, result, n_steady_state=500, self.rise_start, self.rise_end),)
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
@@ -570,7 +591,6 @@ class SOAOptimization:
             show_final_plot (bool): If True, will show a plot with
                 the fitness over the generations.
         """
-        # TODO: test if 'q' to exit works as expected
         self.pop = self.toolbox.population()
         self.hof = tools.HallOfFame(1)
         self.stats = tools.Statistics()
@@ -598,6 +618,7 @@ class SOAOptimization:
             plt.legend(loc="lower right")
             plt.show()
             plt.pause(0.05)
+
 
 if __name__ == "__main__":
     # main_optimizer("mutpb", [0.3])
