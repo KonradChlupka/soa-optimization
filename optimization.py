@@ -547,8 +547,8 @@ class SOAOptimization:
         self.toolbox = base.Toolbox()
         initial = (
             lambda: [random.uniform(-1, 0) for _ in range(50)]
-            + [-1.0] * 10
-            + [1.0] * 10
+            + [-0.999] * 10
+            + [0.999] * 10
             + [random.uniform(0, 1) for _ in range(50)]
         )
         # fmt: off
