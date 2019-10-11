@@ -597,7 +597,7 @@ class SOAOptimization:
                 > 2e-10
             ):
                 return (1000.0,)
-            return (max(result) - self.rise_start) / (self.rise_end - self.rise_start)
+            return (max(result) - self.rise_start) / (self.rise_end - self.rise_start),
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
