@@ -628,7 +628,41 @@ class SOAOptimization:
             plt.pause(0.05)
 
 
+def rising_edge_optimization():
+    awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
+    osc = devices.Agilent86100C("GPIB1::7::INSTR")
+
+    # setup oscilloscope for measurement
+    osc.set_acquire(average=True, count=30, points=1350)
+    osc.set_timebase(position=4e-8, range_=12e-9)
+    T = np.linspace(start=0, stop=12e-9, num=1350)
+
+    # find rise-time ref values
+    awg.send_waveform([-0.75] * 120 + [0.75] * 120)
+    time.sleep(4)
+    res = osc.measurement(channel=1)
+    rise_start = res[0]
+    rise_end = res[-1]
+
+    results = []
+    for n_high in range(9):
+        for n_low in range(9):
+            rising_edge = ([-0.75] * 5 * (8 - n_low) + [-1.0] * 5 * n_low) + (
+                [1.0] * 5 * n_high + [0.75] * 5 * (8 - n_high)
+            )
+            awg.send_waveform([-0.75] * 80 + rising_edge + [0.75] * 80)
+            time.sleep(4)
+            result = osc.measurement(channel=1)
+            my_rise_time = rise_time(
+                T, result, rise_start=rise_start, rise_end=rise_end
+            )
+            results.append(rising_edge, result, my_rise_time)
+    
+    return results
+
+
 if __name__ == "__main__":
     # main_optimizer("mutpb", [0.3])
-    x = SOAOptimization()
-    x.run()
+    # x = SOAOptimization()
+    # x.run()
+    results = rising_edge_optimization()
