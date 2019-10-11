@@ -496,7 +496,7 @@ class SimulationOptimization:
 class SOAOptimization:
     def __init__(
         self,
-        pop_size=120,
+        pop_size=100,
         mu=0,
         sigma=0.15,
         indpb=0.06,
@@ -535,7 +535,7 @@ class SOAOptimization:
         self.T = np.linspace(start=0, stop=12e-9, num=1350)
 
         # find rise-time ref values
-        self.awg.send_waveform([-0.75] * 120 + [0.75] * 120)
+        self.awg.send_waveform([-0.5] * 120 + [0.5] * 120)
         time.sleep(4)
         res = self.osc.measurement(channel=1)
         self.rise_start = res[0]
@@ -545,7 +545,12 @@ class SOAOptimization:
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = lambda: [random.uniform(-1, 1) for _ in range(40)]
+        initial = (
+            lambda: [random.uniform(-1, 0) for _ in range(50)]
+            + [-1.0] * 10
+            + [1.0] * 10
+            + [random.uniform(0, 1) for _ in range(50)]
+        )
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
@@ -570,27 +575,29 @@ class SOAOptimization:
         return (
             all(i > -1.0 for i in U)
             and all(i < 1.0 for i in U)
-            and U[19] < 0
-            and U[20] > 0
         )
 
     def SOA_fitness(self, U):
+        print(".", end="")
         if not self.valid_U(U):
             return (1000.0,)
         else:
-            expanded_U = [-0.75] * 100 + list(U) + [0.75] * 100
+            expanded_U = [-0.5] * 60 + list(U) + [0.5] * 60
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(4)
             result = self.osc.measurement(channel=1)
-            return (
+            if (
                 rise_time(
                     self.T,
                     result,
                     n_steady_state=500,
                     rise_start=self.rise_start,
                     rise_end=self.rise_end,
-                ),
-            )
+                )
+                > 2e-10
+            ):
+                return (1000.0,)
+            return (max(result) - self.rise_start) / (self.rise_end - self.rise_start)
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
@@ -673,7 +680,7 @@ def rising_edge_optimization():
 
 
 def steady_state_optimization():
-    """TODO
+    """Compares the effect of different steady-state on the rise time.
     """
     awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
     osc = devices.Agilent86100C("GPIB1::7::INSTR")
@@ -710,6 +717,5 @@ def steady_state_optimization():
 
 if __name__ == "__main__":
     # main_optimizer("mutpb", [0.3])
-    # x = SOAOptimization()
-    # x.run()
-    results = steady_state_optimization()
+    x = SOAOptimization()
+    x.run()
