@@ -656,7 +656,7 @@ def rising_edge_optimization():
             my_rise_time = rise_time(
                 T, result, rise_start=rise_start, rise_end=rise_end
             )
-            results.append(rising_edge, result, my_rise_time)
+            results.append((rising_edge, result, my_rise_time))
     
     return results
 
