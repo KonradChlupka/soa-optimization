@@ -629,6 +629,13 @@ class SOAOptimization:
 
 
 def rising_edge_optimization():
+    """Finds optimal rising edge.
+
+    The function tests out different rising edges, as follows:
+    each full wave is 240 points, first 80 are -0.75, last 80 are 0.75,
+    and the points in between are either 0.75 or 1.0 (negative before
+    the rising edge). Then rise times can be compared.
+    """
     awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
     osc = devices.Agilent86100C("GPIB1::7::INSTR")
 
@@ -645,6 +652,7 @@ def rising_edge_optimization():
     rise_end = res[-1]
 
     results = []
+
     for n_high in range(9):
         for n_low in range(9):
             rising_edge = ([-0.75] * 5 * (8 - n_low) + [-1.0] * 5 * n_low) + (
@@ -664,8 +672,44 @@ def rising_edge_optimization():
     return results
 
 
+def steady_state_optimization():
+    """TODO
+    """
+    awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
+    osc = devices.Agilent86100C("GPIB1::7::INSTR")
+
+    # setup oscilloscope for measurement
+    osc.set_acquire(average=True, count=30, points=1350)
+    osc.set_timebase(position=4e-8, range_=12e-9)
+    T = np.linspace(start=0, stop=12e-9, num=1350)
+
+    results = []
+
+    for level in [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]:
+        awg.send_waveform([-level] * 120 + [level] * 120, suppress_messages=True)
+        time.sleep(5)
+        res = osc.measurement(channel=1)
+        rise_start = res[0]
+        rise_end = res[-1]
+        rise_time_pure = rise_time(T, res, rise_start=rise_start, rise_end=rise_end)
+
+        awg.send_waveform(
+            [-level] * 110 + [-1.0] * 10 + [1.0] * 10 + [level] * 110,
+            suppress_messages=True,
+        )
+        time.sleep(5)
+        res = osc.measurement(channel=1)
+        rise_time_optimized = rise_time(
+            T, res, rise_start=rise_start, rise_end=rise_end
+        )
+
+        results.append((level, rise_time_pure, rise_time_optimized))
+
+    return results
+
+
 if __name__ == "__main__":
     # main_optimizer("mutpb", [0.3])
     # x = SOAOptimization()
     # x.run()
-    results = rising_edge_optimization()
+    results = steady_state_optimization()
