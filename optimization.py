@@ -639,7 +639,7 @@ def rising_edge_optimization():
 
     # find rise-time ref values
     awg.send_waveform([-0.75] * 120 + [0.75] * 120, suppress_messages=True)
-    time.sleep(4)
+    time.sleep(5)
     res = osc.measurement(channel=1)
     rise_start = res[0]
     rise_end = res[-1]
@@ -653,7 +653,7 @@ def rising_edge_optimization():
             awg.send_waveform(
                 [-0.75] * 80 + rising_edge + [0.75] * 80, suppress_messages=True
             )
-            time.sleep(4)
+            time.sleep(5)
             result = osc.measurement(channel=1)
             my_rise_time = rise_time(
                 T, result, rise_start=rise_start, rise_end=rise_end
