@@ -89,7 +89,7 @@ def settling_time(T, yout, ss_low, ss_high, settling_fraction=0.05):
         settling_fraction (float): Range within which the signal must
             be contained to count as settled.
     """
-    ss_to_ss = ss_low - ss_high  # steady-state to steady-state
+    ss_to_ss = ss_high - ss_low  # steady-state to steady-state
     ss_10 = ss_low + 0.1 * ss_to_ss
     settled_low = ss_high - settling_fraction * ss_to_ss
     settled_high = ss_high + settling_fraction * ss_to_ss
