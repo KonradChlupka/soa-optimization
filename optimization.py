@@ -102,7 +102,7 @@ def settling_time(T, yout, ss_low, ss_high, settling_fraction=0.05):
 
     # find time when signal settles
     for i, t in enumerate(T):
-        if settled_low > yout[i] > settled_high:
+        if  yout[i] > settled_high or yout[i] < settled_low:
             last_not_settled = t
 
     try:
