@@ -73,6 +73,44 @@ def rise_time(T, yout, n_steady_state=24, rise_start=None, rise_end=None):
         return 1000.0
 
 
+def settling_time(T, yout, ss_low, ss_high, settling_fraction=0.05):
+    """Calculates settling time from 10% of rising edge.
+
+    Args:
+        T (Any[float])
+        yout (Any[float]): System's response. Must be the same length
+            as T.
+        ss_low (float): Value of the output well before the rising
+            edge. 10% of the rising edge will be calculated against
+            this.
+        ss_high (float): Value of the output well after the rising
+            edge. 10% of the rising edge will be calculated against
+            this.
+        settling_fraction (float): Range within which the signal must
+            be contained to count as settled.
+    """
+    ss_to_ss = ss_low - ss_high  # steady-state to steady-state
+    ss_10 = ss_low + 0.1 * ss_to_ss
+    settled_low = ss_high - settling_fraction * ss_to_ss
+    settled_high = ss_high + settling_fraction * ss_to_ss
+
+    # find time when signal crosses 10%
+    for i, t in enumerate(T):
+        if yout[i] >= ss_10:
+            t_10 = t
+            break
+    
+    # find time when signal settles
+    for i, t in enumerate(T):
+        if settled_low > yout[i] > settled_high:
+            last_not_settled = t
+    
+    try:
+        return last_not_settled - t_10
+    except UnboundLocalError:
+        return 1000.0
+
+
 def mean_squared_error(yout, i_start, i_stop):
     """Calculates mean squared error against perfect square.
 
@@ -573,10 +611,7 @@ class SOAOptimization:
         Returns:
             bool: True is driving signal is valid, False otherwise.
         """
-        return (
-            all(i > -1.0 for i in U)
-            and all(i < 1.0 for i in U)
-        )
+        return all(i > -1.0 for i in U) and all(i < 1.0 for i in U)
 
     def SOA_fitness(self, U):
         print(".", end="")
@@ -598,7 +633,9 @@ class SOAOptimization:
                 > 2e-10
             ):
                 return (1000.0,)
-            return (max(result) - self.rise_start) / (self.rise_end - self.rise_start),
+            return (
+                (max(result) - self.rise_start) / (self.rise_end - self.rise_start),
+            )
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
