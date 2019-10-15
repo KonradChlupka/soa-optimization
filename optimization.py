@@ -611,8 +611,8 @@ class SOAOptimization:
         return (
             all(i > -1.0 for i in U)
             and all(i < 1.0 for i in U)
-            and all(i < 0.0 for i in U[0:30])
-            and all(i > 0.0 for i in U[30:])
+            and all(i < 0.0 for i in U[28:30])
+            and all(i > 0.0 for i in U[30:32])
         )
 
     def SOA_fitness(self, U):
