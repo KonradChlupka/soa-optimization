@@ -616,7 +616,6 @@ class SOAOptimization:
         )
 
     def SOA_fitness(self, U):
-        print(".", end="")
         if not self.valid_U(U):
             return (1000.0,)
         else:
