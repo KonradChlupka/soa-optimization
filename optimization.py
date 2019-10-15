@@ -99,12 +99,12 @@ def settling_time(T, yout, ss_low, ss_high, settling_fraction=0.05):
         if yout[i] >= ss_10:
             t_10 = t
             break
-    
+
     # find time when signal settles
     for i, t in enumerate(T):
         if settled_low > yout[i] > settled_high:
             last_not_settled = t
-    
+
     try:
         return last_not_settled - t_10
     except UnboundLocalError:
@@ -535,7 +535,7 @@ class SimulationOptimization:
 class SOAOptimization:
     def __init__(
         self,
-        pop_size=100,
+        pop_size=120,
         mu=0,
         sigma=0.15,
         indpb=0.06,
@@ -570,26 +570,23 @@ class SOAOptimization:
 
         # setup oscilloscope for measurement
         self.osc.set_acquire(average=True, count=30, points=1350)
-        # self.osc.set_timebase(position=2.4e-8, range_=12e-9)
+        self.osc.set_timebase(position=2.4e-8, range_=12e-9)
         self.T = np.linspace(start=0, stop=12e-9, num=1350)
 
         # find rise-time ref values
         self.awg.send_waveform([-0.5] * 120 + [0.5] * 120)
-        time.sleep(4)
-        res = self.osc.measurement(channel=1)
-        self.rise_start = res[0]
-        self.rise_end = res[-1]
+        time.sleep(5)
+        res = self.osc.measurement(1)
+        self.ss_low = res[0]
+        self.ss_high = res[-1]
 
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = (
-            lambda: [random.uniform(-1, 0) for _ in range(50)]
-            + [-0.999] * 10
-            + [0.999] * 10
-            + [random.uniform(0, 1) for _ in range(50)]
-        )
+        initial = lambda: [random.uniform(-1, 0) for _ in range(30)] + [
+            random.uniform(0, 1) for _ in range(90)
+        ]
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
@@ -611,31 +608,23 @@ class SOAOptimization:
         Returns:
             bool: True is driving signal is valid, False otherwise.
         """
-        return all(i > -1.0 for i in U) and all(i < 1.0 for i in U)
+        return (
+            all(i > -1.0 for i in U)
+            and all(i < 1.0 for i in U)
+            and all(i < 0.0 for i in U[0:30])
+            and all(i > 0.0 for i in U[30:])
+        )
 
     def SOA_fitness(self, U):
         print(".", end="")
         if not self.valid_U(U):
             return (1000.0,)
         else:
-            expanded_U = [-0.5] * 60 + list(U) + [0.5] * 60
+            expanded_U = [-0.5] * 90 + list(U) + [0.5] * 30
             self.awg.send_waveform(expanded_U, suppress_messages=True)
-            time.sleep(4)
+            time.sleep(5)
             result = self.osc.measurement(channel=1)
-            if (
-                rise_time(
-                    self.T,
-                    result,
-                    n_steady_state=500,
-                    rise_start=self.rise_start,
-                    rise_end=self.rise_end,
-                )
-                > 2e-10
-            ):
-                return (1000.0,)
-            return (
-                (max(result) - self.rise_start) / (self.rise_end - self.rise_start),
-            )
+            return settling_time(self.T, result, self.ss_low, self.ss_high, 0.05),
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
