@@ -158,6 +158,7 @@ def best_of_population(population):
     best_fitness = float("inf")
     for ind in population:
         if ind.fitness.values[0] < best_fitness:
+            best_fitness = ind.fitness.values[0]
             best_ind = ind
     return best_ind
 
