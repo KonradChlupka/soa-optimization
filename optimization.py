@@ -3,6 +3,7 @@ import time
 import multiprocessing
 import sys
 import threading
+import pickle
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -102,7 +103,7 @@ def settling_time(T, yout, ss_low, ss_high, settling_fraction=0.05):
 
     # find time when signal settles
     for i, t in enumerate(T):
-        if  yout[i] > settled_high or yout[i] < settled_low:
+        if yout[i] > settled_high or yout[i] < settled_low:
             last_not_settled = t
 
     try:
@@ -623,7 +624,7 @@ class SOAOptimization:
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
-            return settling_time(self.T, result, self.ss_low, self.ss_high, 0.05),
+            return (settling_time(self.T, result, self.ss_low, self.ss_high, 0.05),)
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
@@ -741,7 +742,56 @@ def steady_state_optimization():
     return results
 
 
+def analysis_of_results():
+    """Function analyzes the logbook results and saves to a pickle.
+    """
+    # load data
+    creator.create("Fitness", base.Fitness, weights=(-1.0,))
+    creator.create("Individual", list, fitness=creator.Fitness)
+    ga_results = pickle.load(open("./temp/logbook_settling_time.p", "rb"))
+
+    # initialize devices
+    awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
+    osc = devices.Agilent86100C("GPIB1::7::INSTR")
+
+    # setup oscilloscope for measurement
+    osc.set_acquire(average=True, count=30, points=1350)
+    osc.set_timebase(position=2.4e-8, range_=12e-9)
+    T = np.linspace(start=0, stop=12e-9, num=1350)
+
+    # find rise-time ref values
+    awg.send_waveform([-0.5] * 120 + [0.5] * 120)
+    time.sleep(5)
+    res = osc.measurement(1)
+    ss_low = res[0]
+    ss_high = res[-1]
+
+    # save results
+    result = []
+    for gen_dict in ga_results:
+        gen_result = {}
+        gen_result["full_driving_signal"] = (
+            [-0.5] * 90 + gen_dict["min_per_population"] + [0.5] * 30
+        )
+        awg.send_waveform(gen_result["full_driving_signal"])
+        time.sleep(4)
+        gen_result["response"] = osc.measurement(1)
+        gen_result["rise_time"] = rise_time(
+            T, gen_result["response"], rise_start=ss_low, rise_end=ss_high
+        )
+        gen_result["overshoot"] = (max(gen_result["response"]) - ss_low) / (
+            ss_high - ss_low
+        )
+        gen_result["settling_time"] = settling_time(
+            T, gen_result["response"], ss_low, ss_high
+        )
+        result.append(gen_result)
+
+    pickle.dump(result, open("analysis.p", "wb"))
+
+
 if __name__ == "__main__":
     # main_optimizer("mutpb", [0.3])
-    x = SOAOptimization()
-    x.run()
+    # x = SOAOptimization()
+    # x.run()
+    analysis_of_results()
