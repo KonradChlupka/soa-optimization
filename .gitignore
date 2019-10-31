@@ -106,3 +106,7 @@ minimum-venv/
 
 # editor
 .vscode
+
+# others
+temp/
+.DS_Store
