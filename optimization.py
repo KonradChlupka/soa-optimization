@@ -121,6 +121,9 @@ def overshoot(yout, ss_low, ss_high):
             edge.
         ss_high (float): Value of the output well after the rising
             edge.
+    
+    Returns:
+        float: Percentage overshoot.
     """
     return 100.0 * (max(yout) - ss_high) / (ss_high - ss_low)
 
