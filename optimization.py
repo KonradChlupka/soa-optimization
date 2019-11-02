@@ -112,6 +112,19 @@ def settling_time(T, yout, ss_low, ss_high, settling_fraction=0.05):
         return 1000.0
 
 
+def overshoot(yout, ss_low, ss_high):
+    """Calculates percentage overshoot.
+
+    Args:
+        yout (Any[float]): System's response.
+        ss_low (float): Value of the output well before the rising
+            edge.
+        ss_high (float): Value of the output well after the rising
+            edge.
+    """
+    return 100.0 * (max(yout) - ss_high) / (ss_high - ss_low)
+
+
 def mean_squared_error(yout, i_start, i_stop):
     """Calculates mean squared error against perfect square.
 
