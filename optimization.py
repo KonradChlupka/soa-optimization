@@ -795,9 +795,7 @@ def analysis_of_results():
         gen_result["rise_time"] = rise_time(
             T, gen_result["response"], rise_start=ss_low, rise_end=ss_high
         )
-        gen_result["overshoot"] = (max(gen_result["response"]) - ss_low) / (
-            ss_high - ss_low
-        )
+        gen_result["overshoot"] = overshoot(gen_result["response"], ss_low, ss_high)
         gen_result["settling_time"] = settling_time(
             T, gen_result["response"], ss_low, ss_high
         )
