@@ -803,9 +803,11 @@ def analysis_of_results():
 
     pickle.dump(result, open("analysis.p", "wb"))
 
+    return result
+
 
 if __name__ == "__main__":
     # main_optimizer("mutpb", [0.3])
     # x = SOAOptimization()
     # x.run()
-    analysis_of_results()
+    res = analysis_of_results()
