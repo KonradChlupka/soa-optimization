@@ -43,11 +43,10 @@ class StepInfo:
         self.mse = self._mse()
 
     def _rise_time(self):
-        """Calculates rise time.
+        """Calculates rise time, saves result to self.rise_time.
 
-        Calculates rise time as specified by rise_time_percentage, and
-        saves the result to self.rise_time. If cannot be calculated,
-        positive infinity is assigned.
+        Calculates rise time as specified by rise_time_percentage. If
+        cannot be calculated, positive infinity is assigned.
         """
         amplitude = ss_high - ss_low
         low_inflection = ss_low + rise_time_percentage / 100 * amplitude
@@ -71,7 +70,11 @@ class StepInfo:
         pass
 
     def _overshoot(self):
-        pass
+        """Calculates % overshoot, saves result to self.overshoot.
+        """
+        self.overshoot = (
+            100.0 * (max(self.y) - self.ss_high) / (self.ss_high - self.ss_low)
+        )
 
     def _mse(self):
         pass

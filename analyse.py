@@ -62,57 +62,6 @@ class ResponseMeasurements:
                 self.settlingTime = i * abs(self.t[0] - self.t[1])
                 break
 
-    def __getSSHighValue(self):
-        self.SSHighValue = np.mean(self.signal[self.settlingTimeIndex :])
-
-    def __getSSLowValue(self):
-        self.SSLowValue = np.mean(self.signal[: self.inflectionTimeIndex])
-
-    def __getRiseTime(self):
-
-        i = self.inflectionTimeIndex
-        prev_diff = abs((self.signal.copy()[i]) - (((self.SSHighValue) * 0.1)))
-        curr_diff = abs((self.signal.copy()[i + 1]) - (((self.SSHighValue) * 0.1)))
-        while curr_diff < prev_diff:
-            prev_diff = abs((self.signal.copy()[i]) - (((self.SSHighValue) * 0.1)))
-            curr_diff = abs((self.signal.copy()[i + 1]) - (((self.SSHighValue) * 0.1)))
-            i += 1
-        self.idxTen = i - 1
-
-        i = self.inflectionTimeIndex
-        prev_diff = abs((self.signal.copy()[i]) - (((self.SSHighValue) * 0.9)))
-        curr_diff = abs((self.signal.copy()[i + 1]) - (((self.SSHighValue) * 0.9)))
-        while curr_diff < prev_diff:
-            prev_diff = abs((self.signal.copy()[i]) - (((self.SSHighValue) * 0.9)))
-            curr_diff = abs((self.signal.copy()[i + 1]) - (((self.SSHighValue) * 0.9)))
-            i += 1
-        self.idxNinety = i - 1
-
-        # self.idxTen = np.argmin(np.abs((self.signal.copy() - ((self.SSHighValue)*0.1 + off_set))))
-
-        # self.idxNinety = np.argmin(np.abs(self.signal.copy() - ((self.SSHighValue)*0.9)))
-
-        timeTen = self.t[self.idxTen]
-
-        timeNinety = self.t[self.idxNinety]
-
-        self.riseTime = timeNinety - timeTen
-
-        """        idxTen = np.argmin(np.abs(self.signal.copy() - self.SSHighValue*0.1))
-        idxNinety = np.argmin(np.abs(self.signal.copy() - self.SSHighValue*0.9))
-        timeTen = self.t[idxTen]
-        timeNinety = self.t[idxNinety]
-        self.riseTime = timeNinety - timeTen
-        self.ten = idxTen
-        self.ninety = idxNinety"""
-
-    def __getOvershoot(self):
-        self.overshoot = abs(
-            float(
-                (self.signal[self.settlingMaxIndex] - self.SSHighValue)
-                / self.SSHighValue
-            )
-        )
 
 
 class SetPoint:
