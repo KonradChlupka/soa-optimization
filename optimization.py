@@ -31,49 +31,6 @@ def find_x_init(trans_func):
     return xout[-1]
 
 
-def rise_time(T, yout, n_steady_state=24, rise_start=None, rise_end=None):
-    """Calculates 10% - 90% rise time.
-
-    The supplied signal must contain only the rising edge, and the
-    rise time is calculated by comparing to the average of the last
-    n_steady_state points of the signal, or if rise_start and rise_end
-    are supplied, to these points.
-
-    Args:
-        T (np.ndarray[float])
-        yout (np.ndarray[float]): System's response. Must be same
-            length as T.
-        n_steady_state (int): Number of points taken from the end of
-            the signal used to calculate steady-state.
-        rise_start (float): Value to be used as low level.
-        rise_end (float): Value to be used as high level.
-
-    Returns:
-        float: Rise time. 1000.0 if cannot be found.
-    """
-    ss = np.mean(yout[-n_steady_state:])  # steady-state
-    start = yout[0]
-    if rise_start is not None:
-        start = rise_start
-    if rise_end is not None:
-        ss = rise_end
-    start_to_ss = ss - start  # amplitude difference
-    ss_90 = start + 0.9 * start_to_ss
-    ss_10 = start + 0.1 * start_to_ss
-    for i, t in enumerate(T):
-        if yout[i] >= ss_90:
-            t_90 = t
-            break
-    for i, t in enumerate(T):
-        if yout[i] >= ss_10:
-            t_10 = t
-            break
-    try:
-        return t_90 - t_10
-    except UnboundLocalError:
-        return 1000.0
-
-
 def settling_time(T, yout, ss_low, ss_high, settling_fraction=0.05):
     """Calculates settling time from 10% of rising edge.
 
@@ -109,53 +66,6 @@ def settling_time(T, yout, ss_low, ss_high, settling_fraction=0.05):
     try:
         return last_not_settled - t_10
     except UnboundLocalError:
-        return 1000.0
-
-
-def overshoot(yout, ss_low, ss_high):
-    """Calculates percentage overshoot.
-
-    Args:
-        yout (Any[float]): System's response.
-        ss_low (float): Value of the output well before the rising
-            edge.
-        ss_high (float): Value of the output well after the rising
-            edge.
-    
-    Returns:
-        float: Percentage overshoot.
-    """
-    return 100.0 * (max(yout) - ss_high) / (ss_high - ss_low)
-
-
-def mean_squared_error(yout, i_start, i_stop):
-    """Calculates mean squared error against perfect square.
-
-    The perfect square is a square wave made up of 480 points, which
-    are 2 periods of a square wave:
-    [-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120. The
-    comparison is made between i_start and i_stop (exclusive).
-    yout is normalized before the comparison.
-
-    Args:
-        yout (np.ndarray[float]): System's response. Must be same
-        length as T.
-
-    Returns:
-        float: Mean squared error. 1000.0 if output is invalid.
-    """
-    square = np.array([-1.0] * 120 + [1.0] * 120 + [-1.0] * 120 + [1.0] * 120)
-    square = square[i_start:i_stop]
-
-    yout = np.array(yout)
-    y_mean = np.mean(yout)
-    y_centered = yout - y_mean
-    y_centered_rms = np.mean(y_centered ** 2) ** 0.5
-    y_norm = y_centered / y_centered_rms
-    mse = np.mean((square - y_norm) ** 2)
-    if 0 < mse < 1000:
-        return mse
-    else:
         return 1000.0
 
 
