@@ -46,10 +46,13 @@ class StepInfo:
         self.mse = self._mse()
 
     def _rise_time(self):
-        """Calculates rise time, saves result to self.rise_time.
+        """Calculates rise time.
 
         Calculates rise time as specified by rise_time_percentage. If
         cannot be calculated, positive infinity is assigned.
+
+        Returns:
+            float
         """
         amplitude = self.ss_high - self.ss_low
         low_inflection = self.ss_low + self.rise_time_percentage / 100 * amplitude
@@ -65,17 +68,20 @@ class StepInfo:
                 break
 
         try:
-            self.rise_time = t_high_inflection - t_low_inflection
+            return t_high_inflection - t_low_inflection
         except UnboundLocalError:
-            self.rise_time = float("inf")
+            return float("inf")
 
     def _settling_time(self):
-        """Calculates settling time, saves result to self.settling_time.
+        """Calculates settling time.
         
         The time after which the rising edge behins is determined by
         rise_time_percentage. settling_time_percentage determines the
         range within which the signal must be contained to count as
         settled.
+
+        Returns:
+            float
         """
         amplitude = self.ss_high - self.ss_low
         settled_threshold_high = (
@@ -98,24 +104,27 @@ class StepInfo:
                 t_last_not_settled = t
 
         try:
-            self.settling_time = t_last_not_settled - t_low_inflection
+            return t_last_not_settled - t_low_inflection
         except UnboundLocalError:
-            self.settling_time = float("inf")
+            return float("inf")
 
     def _overshoot(self):
-        """Calculates % overshoot, saves result to self.overshoot.
+        """Calculates % overshoot.
+
+        Returns:
+            float
         """
-        self.overshoot = (
-            100.0 * (max(self.y) - self.ss_high) / (self.ss_high - self.ss_low)
-        )
+        return 100.0 * (max(self.y) - self.ss_high) / (self.ss_high - self.ss_low)
 
     def _mse(self):
         """Calculates mean squared error with a pure square wave.
 
-        Saves result to self.mse. The point where pure square wave rises
-        is determined by inflection_point_percentage. Low and high
-        levels of pure square wave are determined by ss_low and ss_high,
-        respectively.
+        The point where pure square wave rises is determined by
+        inflection_point_percentage. Low and high levels of pure square
+        wave are determined by ss_low and ss_high, respectively.
+
+        Returns:
+            float
         """
         for index, t in enumerate(self.t):
             if self.y[index] >= self.ss_low + self.inflection_point_percentage / 100 * (
@@ -128,6 +137,6 @@ class StepInfo:
             pure_square = [self.ss_low] * index_above_inflection + [self.ss_high] * (
                 len(self.y) - index_above_inflection
             )
-            self.mse = np.mean(((np.array(pure_square) - np.array(self.y)) ** 2))
+            return np.mean(((np.array(pure_square) - np.array(self.y)) ** 2))
         except UnboundLocalError:
-            self.mse = float("inf")
+            return float("inf")
