@@ -97,6 +97,7 @@ class StepInfo:
                 self.ss_high - self.ss_low
             ):
                 t_low_inflection = t
+                break
 
         # find time when signal settles
         for i, t in enumerate(self.t):
