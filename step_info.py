@@ -70,7 +70,37 @@ class StepInfo:
             self.rise_time = float("inf")
 
     def _settling_time(self):
-        pass
+        """Calculates settling time, saves result to self.settling_time.
+        
+        The time after which the rising edge behins is determined by
+        rise_time_percentage. settling_time_percentage determines the
+        range within which the signal must be contained to count as
+        settled.
+        """
+        amplitude = self.ss_high - self.ss_low
+        settled_threshold_high = (
+            self.ss_high + self.settling_time_percentage / 100 * amplitude
+        )
+        settled_threshold_low = (
+            self.ss_high - self.settling_time_percentage / 100 * amplitude
+        )
+
+        # find inflection point
+        for i, t in enumerate(self.t):
+            if self.y[i] >= self.ss_low + self.rise_time_percentage / 100 * (
+                self.ss_high - self.ss_low
+            ):
+                t_low_inflection = t
+
+        # find time when signal settles
+        for i, t in enumerate(self.t):
+            if self.y[i] > settled_threshold_high or self.y[i] < settled_threshold_low:
+                t_last_not_settled = t
+
+        try:
+            self.settling_time = t_last_not_settled - t_low_inflection
+        except UnboundLocalError:
+            self.settling_time = float("inf")
 
     def _overshoot(self):
         """Calculates % overshoot, saves result to self.overshoot.
@@ -82,9 +112,10 @@ class StepInfo:
     def _mse(self):
         """Calculates mean squared error with a pure square wave.
 
-        The point where pure square wave rises is determined by
-        inflection_point_percentage. Low and high levels of pure square
-        wave are determined by ss_low and ss_high, respectively.
+        Saves result to self.mse. The point where pure square wave rises
+        is determined by inflection_point_percentage. Low and high
+        levels of pure square wave are determined by ss_low and ss_high,
+        respectively.
         """
         for index, t in enumerate(self.t):
             if y[index] >= ss_low + self.inflection_point_percentage / 100 * (
