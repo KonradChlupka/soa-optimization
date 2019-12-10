@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class StepInfo:
     def __init__(
         self,
@@ -7,7 +10,7 @@ class StepInfo:
         ss_high,
         rise_time_percentage=10,
         settling_time_percentage=5,
-        inflection_point_percentage=10,
+        inflection_point_percentage=50,
     ):
         """Performs a analysis of a step signal.
 
@@ -77,4 +80,23 @@ class StepInfo:
         )
 
     def _mse(self):
-        pass
+        """Calculates mean squared error with a pure square wave.
+
+        The point where pure square wave rises is determined by
+        inflection_point_percentage. Low and high levels of pure square
+        wave are determined by ss_low and ss_high, respectively.
+        """
+        for index, t in enumerate(self.t):
+            if y[index] >= ss_low + self.inflection_point_percentage / 100 * (
+                self.ss_high - self.ss_low
+            ):
+                index_above_inflection = index
+                break
+
+        try:
+            pure_square = [self.ss_low] * index_above_inflection + [self.ss_high] * (
+                len(self.y) - index_above_inflection
+            )
+            self.mse = np.mean((np.array(pure_square - self.y) ** 2))
+        except UnboundLocalError:
+            self.mse = float("inf")
