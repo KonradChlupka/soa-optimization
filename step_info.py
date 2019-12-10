@@ -128,6 +128,6 @@ class StepInfo:
             pure_square = [self.ss_low] * index_above_inflection + [self.ss_high] * (
                 len(self.y) - index_above_inflection
             )
-            self.mse = np.mean((np.array(pure_square - self.y) ** 2))
+            self.mse = np.mean(((np.array(pure_square) - np.array(self.y)) ** 2))
         except UnboundLocalError:
             self.mse = float("inf")
