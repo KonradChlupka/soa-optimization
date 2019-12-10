@@ -56,11 +56,11 @@ class StepInfo:
         high_inflection = self.ss_high - self.rise_time_percentage / 100 * amplitude
 
         for index, t in enumerate(self.t):
-            if y[index] >= high_inflection:
+            if self.y[index] >= high_inflection:
                 t_high_inflection = t
                 break
         for index, t in enumerate(self.t):
-            if y[index] >= low_inflection:
+            if self.y[index] >= low_inflection:
                 t_low_inflection = t
                 break
 
@@ -118,7 +118,7 @@ class StepInfo:
         respectively.
         """
         for index, t in enumerate(self.t):
-            if y[index] >= ss_low + self.inflection_point_percentage / 100 * (
+            if self.y[index] >= self.ss_low + self.inflection_point_percentage / 100 * (
                 self.ss_high - self.ss_low
             ):
                 index_above_inflection = index
