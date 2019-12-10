@@ -14,6 +14,7 @@ from deap import algorithms  # contains ready genetic evolutionary loops
 from scipy import signal
 
 import devices
+import step_info
 
 
 def find_x_init(trans_func):
@@ -30,43 +31,6 @@ def find_x_init(trans_func):
     (_, _, xout) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-13)
     return xout[-1]
 
-
-def settling_time(T, yout, ss_low, ss_high, settling_fraction=0.05):
-    """Calculates settling time from 10% of rising edge.
-
-    Args:
-        T (Any[float])
-        yout (Any[float]): System's response. Must be the same length
-            as T.
-        ss_low (float): Value of the output well before the rising
-            edge. 10% of the rising edge will be calculated against
-            this.
-        ss_high (float): Value of the output well after the rising
-            edge. 10% of the rising edge will be calculated against
-            this.
-        settling_fraction (float): Range within which the signal must
-            be contained to count as settled.
-    """
-    ss_to_ss = ss_high - ss_low  # steady-state to steady-state
-    ss_10 = ss_low + 0.1 * ss_to_ss
-    settled_low = ss_high - settling_fraction * ss_to_ss
-    settled_high = ss_high + settling_fraction * ss_to_ss
-
-    # find time when signal crosses 10%
-    for i, t in enumerate(T):
-        if yout[i] >= ss_10:
-            t_10 = t
-            break
-
-    # find time when signal settles
-    for i, t in enumerate(T):
-        if yout[i] > settled_high or yout[i] < settled_low:
-            last_not_settled = t
-
-    try:
-        return last_not_settled - t_10
-    except UnboundLocalError:
-        return 1000.0
 
 
 def valid_driver_signal(U):
