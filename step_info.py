@@ -26,7 +26,8 @@ class StepInfo:
             settling_time_percentage (number): Range within which the
                 signal must be contained to count as settled.
             inflection_point_percentage (number): Percentage of the
-                rising edge used for inflection point.
+                rising edge used for inflection point when calculating
+                mse.
         """
         self.y = y
         self.t = t
@@ -36,19 +37,41 @@ class StepInfo:
         self.settling_time_percentage = settling_time_percentage
         self.inflection_point_percentage = inflection_point_percentage
 
-        self.rise_time = self.rise_time()
-        self.settling_time = self.settling_time()
-        self.overshoot = self.overshoot()
-        self.mse = self.mse()
+        self.rise_time = self._rise_time()
+        self.settling_time = self._settling_time()
+        self.overshoot = self._overshoot()
+        self.mse = self._mse()
 
-    def rise_time():
+    def _rise_time(self):
+        """Calculates rise time.
+
+        Calculates rise time as specified by rise_time_percentage, and
+        saves the result to self.rise_time. If cannot be calculated,
+        positive infinity is assigned.
+        """
+        amplitude = ss_high - ss_low
+        low_inflection = ss_low + rise_time_percentage / 100 * amplitude
+        high_inflection = ss_high - rise_time_percentage / 100 * amplitude
+
+        for index, t in enumerate(self.t):
+            if y[index] >= high_inflection:
+                t_high_inflection = t
+                break
+        for index, t in enumerate(self.t):
+            if y[index] >= low_inflection:
+                t_low_inflection = t
+                break
+
+        try:
+            self.rise_time = t_high_inflection - t_low_inflection
+        except UnboundLocalError:
+            self.rise_time = float("inf")
+
+    def _settling_time(self):
         pass
 
-    def settling_time():
+    def _overshoot(self):
         pass
 
-    def overshoot():
-        pass
-
-    def mse():
+    def _mse(self):
         pass
