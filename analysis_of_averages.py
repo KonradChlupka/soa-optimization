@@ -1,4 +1,4 @@
-import devivces
+import devices
 import time
 
 results = []
