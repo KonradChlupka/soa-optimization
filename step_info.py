@@ -51,9 +51,9 @@ class StepInfo:
         Calculates rise time as specified by rise_time_percentage. If
         cannot be calculated, positive infinity is assigned.
         """
-        amplitude = ss_high - ss_low
-        low_inflection = ss_low + rise_time_percentage / 100 * amplitude
-        high_inflection = ss_high - rise_time_percentage / 100 * amplitude
+        amplitude = self.ss_high - self.ss_low
+        low_inflection = self.ss_low + self.rise_time_percentage / 100 * amplitude
+        high_inflection = self.ss_high - self.rise_time_percentage / 100 * amplitude
 
         for index, t in enumerate(self.t):
             if y[index] >= high_inflection:

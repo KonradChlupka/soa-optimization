@@ -32,7 +32,6 @@ def find_x_init(trans_func):
     return xout[-1]
 
 
-
 def valid_driver_signal(U):
     """Checks if the driving signal is valid.
 
