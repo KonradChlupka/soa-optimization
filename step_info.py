@@ -9,7 +9,7 @@ class StepInfo:
         settling_time_percentage=5,
         inflection_point_percentage=10,
     ):
-        """Performs a full step analysis of a signal.
+        """Performs a analysis of a step signal.
 
         Args:
             y (Iterable[float]): The step signal to be analyzed. Must
