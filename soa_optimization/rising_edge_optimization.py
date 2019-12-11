@@ -1,5 +1,5 @@
-import time
 import numpy as np
+import time
 
 import devices
 from step_info import StepInfo
