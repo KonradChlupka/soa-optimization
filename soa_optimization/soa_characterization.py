@@ -1,8 +1,8 @@
-import time
-import pickle
 import csv
-import random
 import numpy as np
+import pickle
+import random
+import time
 
 import devices
 
