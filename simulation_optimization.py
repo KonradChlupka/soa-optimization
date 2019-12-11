@@ -460,13 +460,15 @@ class SOAOptimization:
 
         # setup oscilloscope for measurement
         self.osc.set_acquire(average=True, count=30, points=1350)
-        self.osc.set_timebase(position=2.4e-8, range_=12e-9)
-        self.T = np.linspace(start=0, stop=12e-9, num=1350)
+        self.osc.set_timebase(position=2.4e-8, range_=30e-9)
+        self.T = np.linspace(start=0, stop=30e-9, num=1350)
 
         # find rise-time ref values
+        self.osc.set_timebase(position=2.4e-8, range_=15e-9)
         self.awg.send_waveform([-0.5] * 120 + [0.5] * 120)
         time.sleep(5)
         res = self.osc.measurement(1)
+        self.osc.set_timebase(position=2.4e-8, range_=30e-9)
         self.ss_low = res[0]
         self.ss_high = res[-1]
 
@@ -475,7 +477,7 @@ class SOAOptimization:
 
         self.toolbox = base.Toolbox()
         initial = lambda: [random.uniform(-1, 0) for _ in range(30)] + [
-            random.uniform(0, 1) for _ in range(90)
+            random.uniform(0, 1) for _ in range(30)
         ]
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
@@ -491,7 +493,7 @@ class SOAOptimization:
         """Checks if the driving signal is valid.
 
         Args:
-            U (List[float]): Driving signal. Length is assumed to be 40,
+            U (List[float]): Driving signal. Length is assumed to be 60,
                 and each point must be strongly between -1.0 and 1.0.
                 The rising edge must be in the middle.
 
@@ -509,10 +511,11 @@ class SOAOptimization:
         if not self.valid_U(U):
             return (1000.0,)
         else:
-            expanded_U = [-0.5] * 90 + list(U) + [0.5] * 30
+            expanded_U = [-0.5] * 90 + list(U) + [0.5] * 90
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
+            step_info.StepInfo(result)
             return (settling_time(self.T, result, self.ss_low, self.ss_high, 0.05),)
 
     def run(self, show_final_plot=True):
@@ -631,56 +634,7 @@ def steady_state_optimization():
     return results
 
 
-def analysis_of_results():
-    """Function analyzes the logbook results and saves to a pickle.
-    """
-    # load data
-    creator.create("Fitness", base.Fitness, weights=(-1.0,))
-    creator.create("Individual", list, fitness=creator.Fitness)
-    ga_results = pickle.load(open("./temp/logbook_settling_time.p", "rb"))
-
-    # initialize devices
-    awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
-    osc = devices.Agilent86100C("GPIB1::7::INSTR")
-
-    # setup oscilloscope for measurement
-    osc.set_acquire(average=True, count=30, points=1350)
-    osc.set_timebase(position=2.4e-8, range_=12e-9)
-    T = np.linspace(start=0, stop=12e-9, num=1350)
-
-    # find rise-time ref values
-    awg.send_waveform([-0.5] * 120 + [0.5] * 120)
-    time.sleep(5)
-    res = osc.measurement(1)
-    ss_low = res[0]
-    ss_high = res[-1]
-
-    # save results
-    result = []
-    for gen_dict in ga_results:
-        gen_result = {}
-        gen_result["full_driving_signal"] = (
-            [-0.5] * 90 + gen_dict["min_per_population"] + [0.5] * 30
-        )
-        awg.send_waveform(gen_result["full_driving_signal"])
-        time.sleep(4)
-        gen_result["response"] = osc.measurement(1)
-        gen_result["rise_time"] = rise_time(
-            T, gen_result["response"], rise_start=ss_low, rise_end=ss_high
-        )
-        gen_result["overshoot"] = overshoot(gen_result["response"], ss_low, ss_high)
-        gen_result["settling_time"] = settling_time(
-            T, gen_result["response"], ss_low, ss_high
-        )
-        result.append(gen_result)
-
-    pickle.dump(result, open("analysis.p", "wb"))
-
-    return result
-
 
 if __name__ == "__main__":
-    # main_optimizer("mutpb", [0.3])
-    # x = SOAOptimization()
-    # x.run()
-    res = analysis_of_results()
+    x = SOAOptimization()
+    x.run()
