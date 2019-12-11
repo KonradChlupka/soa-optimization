@@ -209,6 +209,9 @@ class SOAOptimization:
     ):
         """Implements optimization for real SOA.
 
+        The hypers used are optimized by hyperparameter optimization on
+        the simulation.
+
         Args:
             pop_size (int): Populaiton size (number of individuals in
                 each generation).
