@@ -11,7 +11,7 @@ class StepInfo:
         n_ss=10,
         rise_time_percentage=10,
         settling_time_percentage=5,
-        inflection_point_percentage=50,
+        inflection_point_percentage=10,
         step_length=None,
     ):
         """Performs the analysis of a step signal.
@@ -47,6 +47,7 @@ class StepInfo:
         self.rise_time_percentage = rise_time_percentage
         self.settling_time_percentage = settling_time_percentage
         self.inflection_point_percentage = inflection_point_percentage
+        self.inflection_point_index = None  # calculated inside _mse()
         self.step_length = step_length
 
         if step_length:
@@ -156,6 +157,7 @@ class StepInfo:
                 self.ss_high - self.ss_low
             ):
                 index_above_inflection = index
+                self.inflection_point_index = index
                 break
 
         try:
