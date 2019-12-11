@@ -1,5 +1,4 @@
 import multiprocessing
-import pickle
 import random
 import sys
 import threading
