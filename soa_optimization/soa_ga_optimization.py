@@ -145,7 +145,9 @@ def eaSimple(
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = toolbox.map(functools.partial(toolbox.evaluate, gen=gen), invalid_ind)
+        fitnesses = toolbox.map(
+            functools.partial(toolbox.evaluate, gen=gen), invalid_ind
+        )
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
 
@@ -216,7 +218,7 @@ class SOAOptimization:
         # setup oscilloscope for measurement
         self.osc.set_acquire(average=True, count=30, points=1350)
         self.osc.set_timebase(position=2.4e-8, range_=30e-9)
-        self.T = np.linspace(start=0, stop=30e-9, num=1350)
+        self.T = np.linspace(start=0, stop=30e-9, num=1350, endpoint=False)
 
         # find rise-time ref values
         self.osc.set_timebase(position=2.4e-8, range_=15e-9)

@@ -11,12 +11,14 @@ class StepInfo:
         rise_time_percentage=10,
         settling_time_percentage=5,
         inflection_point_percentage=50,
+        i_end_of_step=None,
     ):
         """Performs the analysis of a step signal.
 
         Args:
             y (Iterable[float]): The step signal to be analyzed. Must
-                contain only the step.
+                contain only the step. Optinally can contain signal
+                after the step, indicated by i_end_of_step.
             t (Iterable[float]): Time.
             ss_low (float): Value of the output well before the rising
                 edge.
@@ -31,6 +33,9 @@ class StepInfo:
             inflection_point_percentage (number): Percentage of the
                 rising edge used for inflection point when calculating
                 mse.
+            i_end_of_step (int): If y contains more than just the step,
+                this can indicate the index at which the step is
+                considered to end.
         """
         self.y = y
         self.t = t
@@ -39,6 +44,7 @@ class StepInfo:
         self.rise_time_percentage = rise_time_percentage
         self.settling_time_percentage = settling_time_percentage
         self.inflection_point_percentage = inflection_point_percentage
+        self.i_end_of_step = i_end_of_step
 
         self.rise_time = self._rise_time()
         self.settling_time = self._settling_time()
