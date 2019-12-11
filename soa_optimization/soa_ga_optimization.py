@@ -273,7 +273,7 @@ class SOAOptimization:
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
-            si = StepInfo(result, self.T, self.ss_low, self.ss_high)
+            si = StepInfo(result, self.T, self.ss_low, self.ss_high, step_length=675)
             si.U = expanded_U
             si.gen = gen
             global_logbook.append(si)
