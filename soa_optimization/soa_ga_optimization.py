@@ -1,3 +1,4 @@
+import functools
 import random
 import sys
 import threading
@@ -109,7 +110,7 @@ def eaSimple(
 
     # Evaluate the individuals with an invalid fitness
     invalid_ind = [ind for ind in population if not ind.fitness.valid]
-    fitnesses = toolbox.map(toolbox.evaluate, invalid_ind, 0)
+    fitnesses = toolbox.map(functools.partial(toolbox.evaluate, 0), invalid_ind)
     for ind, fit in zip(invalid_ind, fitnesses):
         ind.fitness.values = fit
 
@@ -144,7 +145,7 @@ def eaSimple(
 
         # Evaluate the individuals with an invalid fitness
         invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-        fitnesses = toolbox.map(toolbox.evaluate, invalid_ind, gen)
+        fitnesses = toolbox.map(functools.partial(toolbox.evaluate, gen), invalid_ind)
         for ind, fit in zip(invalid_ind, fitnesses):
             ind.fitness.values = fit
 
