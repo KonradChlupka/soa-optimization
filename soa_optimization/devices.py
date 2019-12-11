@@ -1,8 +1,8 @@
 import time
 import struct
 
-import visa
 import numpy as np
+import visa
 
 
 class Lightwave7900B:
