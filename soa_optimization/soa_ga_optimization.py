@@ -1,5 +1,3 @@
-import multiprocessing
-import pickle
 import random
 import sys
 import threading
@@ -11,10 +9,11 @@ from deap import algorithms  # contains ready genetic evolutionary loops
 from deap import base  # contains Toolbox and base Fitness
 from deap import creator  # creating types
 from deap import tools  # contains operators
-from scipy import signal
 
 import devices
 from step_info import StepInfo
+
+ss_amplitude = 0.5
 
 
 def best_of_population(population):
@@ -23,7 +22,7 @@ def best_of_population(population):
     Assumes that lower fitness equals better.
 
     Args:
-        population (Tuple[List[float]]):
+        population (List[Any]): List of individuals.
     
     Returns:
         List[float]: Best individual in a population.
@@ -63,7 +62,7 @@ def eaSimple(
     """This algorithm reproduce the simplest evolutionary algorithm as
     presented in chapter 7 of [Back2000]_.
 
-    The algorithm is copied from algorithms.py, with slight
+    The algorithm is copied from algorithms.py (DEAP lib), with slight
     modifications.
 
     :param population: A list of individuals.
@@ -192,7 +191,6 @@ def eaSimple(
     return population, logbook
 
 
-
 class SOAOptimization:
     def __init__(
         self,
@@ -239,7 +237,7 @@ class SOAOptimization:
 
         # find rise-time ref values
         self.osc.set_timebase(position=2.4e-8, range_=15e-9)
-        self.awg.send_waveform([-0.5] * 120 + [0.5] * 120)
+        self.awg.send_waveform([-ss_amplitude] * 120 + [ss_amplitude] * 120)
         time.sleep(5)
         res = self.osc.measurement(1)
         self.osc.set_timebase(position=2.4e-8, range_=30e-9)
@@ -285,12 +283,12 @@ class SOAOptimization:
         if not self.valid_U(U):
             return (1000.0,)
         else:
-            expanded_U = [-0.5] * 90 + list(U) + [0.5] * 90
+            expanded_U = [-ss_amplitude] * 90 + list(U) + [ss_amplitude] * 90
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
-            step_info.StepInfo(result)
-            return (settling_time(self.T, result, self.ss_low, self.ss_high, 0.05),)
+            si = StepInfo(result, self.T, self.ss_low, self.ss_high)
+            return (si.settling_time,)
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
@@ -326,87 +324,6 @@ class SOAOptimization:
             plt.legend(loc="lower right")
             plt.show()
             plt.pause(0.05)
-
-
-def rising_edge_optimization():
-    """Finds optimal rising edge.
-
-    The function tests out different rising edges, as follows:
-    each full wave is 240 points, first 80 are -0.75, last 80 are 0.75,
-    and the points in between are either 0.75 or 1.0 (negative before
-    the rising edge). Then rise times can be compared.
-    """
-    awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
-    osc = devices.Agilent86100C("GPIB1::7::INSTR")
-
-    # setup oscilloscope for measurement
-    osc.set_acquire(average=True, count=30, points=1350)
-    osc.set_timebase(position=4e-8, range_=12e-9)
-    T = np.linspace(start=0, stop=12e-9, num=1350)
-
-    # find rise-time ref values
-    awg.send_waveform([-0.75] * 120 + [0.75] * 120, suppress_messages=True)
-    time.sleep(5)
-    res = osc.measurement(channel=1)
-    rise_start = res[0]
-    rise_end = res[-1]
-
-    results = []
-
-    for n_high in range(9):
-        for n_low in range(9):
-            rising_edge = ([-0.75] * 5 * (8 - n_low) + [-1.0] * 5 * n_low) + (
-                [1.0] * 5 * n_high + [0.75] * 5 * (8 - n_high)
-            )
-            awg.send_waveform(
-                [-0.75] * 80 + rising_edge + [0.75] * 80, suppress_messages=True
-            )
-            time.sleep(5)
-            result = osc.measurement(channel=1)
-            my_rise_time = rise_time(
-                T, result, rise_start=rise_start, rise_end=rise_end
-            )
-            print(my_rise_time)
-            results.append((rising_edge, result, my_rise_time))
-
-    return results
-
-
-def steady_state_optimization():
-    """Compares the effect of different steady-state on the rise time.
-    """
-    awg = devices.TektronixAWG7122B("GPIB1::1::INSTR")
-    osc = devices.Agilent86100C("GPIB1::7::INSTR")
-
-    # setup oscilloscope for measurement
-    osc.set_acquire(average=True, count=30, points=1350)
-    osc.set_timebase(position=4e-8, range_=12e-9)
-    T = np.linspace(start=0, stop=12e-9, num=1350)
-
-    results = []
-
-    for level in [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]:
-        awg.send_waveform([-level] * 120 + [level] * 120, suppress_messages=True)
-        time.sleep(5)
-        res = osc.measurement(channel=1)
-        rise_start = res[0]
-        rise_end = res[-1]
-        rise_time_pure = rise_time(T, res, rise_start=rise_start, rise_end=rise_end)
-
-        awg.send_waveform(
-            [-level] * 110 + [-1.0] * 10 + [1.0] * 10 + [level] * 110,
-            suppress_messages=True,
-        )
-        time.sleep(5)
-        res = osc.measurement(channel=1)
-        rise_time_optimized = rise_time(
-            T, res, rise_start=rise_start, rise_end=rise_end
-        )
-
-        results.append((level, rise_time_pure, rise_time_optimized))
-
-    return results
-
 
 
 if __name__ == "__main__":
