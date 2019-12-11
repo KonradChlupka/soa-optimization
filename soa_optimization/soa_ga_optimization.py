@@ -316,4 +316,4 @@ class SOAOptimization:
 
 if __name__ == "__main__":
     x = SOAOptimization()
-    x.run()
+    x.run(show_final_plot=False)
