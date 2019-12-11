@@ -6,8 +6,9 @@ class StepInfo:
         self,
         y,
         t,
-        ss_low,
-        ss_high,
+        ss_low=None,
+        ss_high=None,
+        n_ss=10,
         rise_time_percentage=10,
         settling_time_percentage=5,
         inflection_point_percentage=50,
@@ -21,9 +22,12 @@ class StepInfo:
                 after the step, indicated by step_length.
             t (Iterable[float]): Time.
             ss_low (float): Value of the output well before the rising
-                edge.
+                edge. If None, it will be calculated as the average of
+                the first n_ss points of y.
             ss_high (float): Value of the output well after the rising
-                edge.
+                edge. I None, it will be calculated as the average of
+                the last n_ss points of y (optionally clipped if
+                step_length is provided).
             rise_time_percentage (number): Percentage value to be used
                 in calculating rise time. Using "10" will result in
                 calculating 10-90% rise time, using "5" will correspond
@@ -40,8 +44,6 @@ class StepInfo:
         """
         self.y = y
         self.t = t
-        self.ss_low = ss_low
-        self.ss_high = ss_high
         self.rise_time_percentage = rise_time_percentage
         self.settling_time_percentage = settling_time_percentage
         self.inflection_point_percentage = inflection_point_percentage
@@ -52,6 +54,15 @@ class StepInfo:
             self.t_unclipped = self.t
             self.y = self.y[:step_length]
             self.t = self.t[:step_length]
+        
+        if ss_low:
+            self.ss_low = ss_low
+        else:
+            self.ss_low = float(np.mean(self.y[:n_ss]))
+        if ss_high:
+            self.ss_high = ss_high
+        else:
+            self.ss_high = float(np.mean(self.y[-n_ss:]))
 
         self.rise_time = self._rise_time()
         self.settling_time = self._settling_time()
