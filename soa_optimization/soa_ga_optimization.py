@@ -1,20 +1,20 @@
-import random
-import time
 import multiprocessing
+import pickle
+import random
 import sys
 import threading
-import pickle
+import time
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from deap import algorithms  # contains ready genetic evolutionary loops
 from deap import base  # contains Toolbox and base Fitness
 from deap import creator  # creating types
 from deap import tools  # contains operators
-from deap import algorithms  # contains ready genetic evolutionary loops
 from scipy import signal
 
 import devices
-import step_info
+from step_info import StepInfo
 
 
 def best_of_population(population):
