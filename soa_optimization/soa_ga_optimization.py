@@ -14,25 +14,7 @@ import devices
 from step_info import StepInfo
 
 ss_amplitude = 0.5
-
-
-def best_of_population(population):
-    """Finds the best individual in a population.
-
-    Assumes that lower fitness equals better.
-
-    Args:
-        population (List[Any]): List of individuals.
-    
-    Returns:
-        List[float]: Best individual in a population.
-    """
-    best_fitness = float("inf")
-    for ind in population:
-        if ind.fitness.values[0] < best_fitness:
-            best_fitness = ind.fitness.values[0]
-            best_ind = ind
-    return best_ind
+global_logbook = []
 
 
 def quitting_thread(newstdin, flag):
@@ -279,28 +261,31 @@ class SOAOptimization:
             and all(i > 0.0 for i in U[30:32])
         )
 
-    def SOA_fitness(self, U):
+    def SOA_fitness(self, U, gen=None):
         if not self.valid_U(U):
             return (1000.0,)
         else:
+            global global_logbook
             expanded_U = [-ss_amplitude] * 90 + list(U) + [ss_amplitude] * 90
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
             si = StepInfo(result, self.T, self.ss_low, self.ss_high)
-            return (si.settling_time,)
+            si.U = expanded_U
+            si.gen = gen
+            global_logbook.append(si)
+            return (si.rise_time,)
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
 
         Args:
-            show_final_plot (bool): If True, will show a plot with
-                the fitness over the generations.
+            show_final_plot (bool): If True, will show a plot with the
+                fitness over the generations.
         """
         self.pop = self.toolbox.population()
         self.hof = tools.HallOfFame(1)
         self.stats = tools.Statistics()
-        self.stats.register("min_per_population", best_of_population)
         self.stats.register(
             "min_fitness", lambda pop: np.min([ind.fitness.values for ind in pop])
         )
