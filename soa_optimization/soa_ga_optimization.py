@@ -233,9 +233,12 @@ class SOAOptimization:
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = lambda: [random.uniform(-1, 0) for _ in range(30)] + [
-            random.uniform(0, 1) for _ in range(30)
-        ]
+        initial = (
+            lambda: [random.uniform(-1, 0) for _ in range(50)]
+            + [-0.99] * 10
+            + [0.99] * 10
+            + [random.uniform(0, 1) for _ in range(50)]
+        )
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
@@ -260,8 +263,8 @@ class SOAOptimization:
         return (
             all(i > -1.0 for i in U)
             and all(i < 1.0 for i in U)
-            and all(i < 0.0 for i in U[28:30])
-            and all(i > 0.0 for i in U[30:32])
+            and all(i < 0.0 for i in U[58:60])
+            and all(i > 0.0 for i in U[60:62])
         )
 
     def SOA_fitness(self, U, gen=None):
@@ -269,15 +272,17 @@ class SOAOptimization:
             return (1000.0,)
         else:
             global global_logbook
-            expanded_U = [-ss_amplitude] * 90 + list(U) + [ss_amplitude] * 90
+            expanded_U = [-ss_amplitude] * 60 + list(U) + [ss_amplitude] * 60
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
             si = StepInfo(result, self.T, self.ss_low, self.ss_high, step_length=675)
+            if si.rise_time > 300e-8:
+                return (1000.0,)
             si.U = expanded_U
             si.gen = gen
             global_logbook.append(si)
-            return (si.rise_time,)
+            return (si.overshoot,)
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
