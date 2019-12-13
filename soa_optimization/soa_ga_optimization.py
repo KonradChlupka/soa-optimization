@@ -187,7 +187,7 @@ class SOAOptimization:
         tournsize=4,
         cxpb=0.9,
         mutpb=0.45,
-        ngen=500,
+        ngen=2000,
         interactive=True,
         show_plotting=True,
     ):
@@ -236,7 +236,7 @@ class SOAOptimization:
         self.toolbox = base.Toolbox()
         initial = (
             lambda: [random.uniform(-1, 0) for _ in range(30)]
-            + [random.uniform(0, 1) for _ in range(110)]
+            + [random.uniform(0, 1) for _ in range(90)]
         )
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
@@ -271,7 +271,7 @@ class SOAOptimization:
             return (1000.0,)
         else:
             global global_logbook
-            expanded_U = [-ss_amplitude] * 90 + list(U) + [ss_amplitude] * 10
+            expanded_U = [-ss_amplitude] * 90 + list(U) + [ss_amplitude] * 30
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
