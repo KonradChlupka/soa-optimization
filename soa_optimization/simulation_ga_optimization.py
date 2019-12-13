@@ -78,7 +78,7 @@ def best_of_population(population):
 
     Args:
         population (Tuple[List[float]]):
-    
+
     Returns:
         List[float]: Best individual in a population.
     """

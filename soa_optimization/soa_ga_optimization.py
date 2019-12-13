@@ -1,4 +1,5 @@
 import functools
+import pickle
 import random
 import sys
 import threading
@@ -186,7 +187,7 @@ class SOAOptimization:
         tournsize=4,
         cxpb=0.9,
         mutpb=0.45,
-        ngen=2000,
+        ngen=500,
         interactive=True,
         show_plotting=True,
     ):
@@ -234,10 +235,8 @@ class SOAOptimization:
 
         self.toolbox = base.Toolbox()
         initial = (
-            lambda: [random.uniform(-1, 0) for _ in range(50)]
-            + [-0.99] * 10
-            + [0.99] * 10
-            + [random.uniform(0, 1) for _ in range(50)]
+            lambda: [random.uniform(-1, 0) for _ in range(30)]
+            + [random.uniform(0, 1) for _ in range(110)]
         )
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
@@ -263,8 +262,8 @@ class SOAOptimization:
         return (
             all(i > -1.0 for i in U)
             and all(i < 1.0 for i in U)
-            and all(i < 0.0 for i in U[58:60])
-            and all(i > 0.0 for i in U[60:62])
+            and all(i < 0.0 for i in U[28:30])
+            and all(i > 0.0 for i in U[30:32])
         )
 
     def SOA_fitness(self, U, gen=None):
@@ -272,17 +271,15 @@ class SOAOptimization:
             return (1000.0,)
         else:
             global global_logbook
-            expanded_U = [-ss_amplitude] * 60 + list(U) + [ss_amplitude] * 60
+            expanded_U = [-ss_amplitude] * 90 + list(U) + [ss_amplitude] * 10
             self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
             si = StepInfo(result, self.T, self.ss_low, self.ss_high, step_length=675)
-            if si.rise_time > 300e-8:
-                return (1000.0,)
             si.U = expanded_U
             si.gen = gen
             global_logbook.append(si)
-            return (si.overshoot,)
+            return (si.settling_time,)
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
@@ -322,3 +319,4 @@ class SOAOptimization:
 if __name__ == "__main__":
     x = SOAOptimization()
     x.run(show_final_plot=False)
+    pickle.dump(global_logbook, open("second_settling_time.pickle", "wb"))
