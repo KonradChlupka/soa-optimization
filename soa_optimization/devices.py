@@ -572,8 +572,8 @@ class TektronixAWG7122B:
         # (occurs when new waveform is shorter)
         if not suppress_messages:
             print(
-                "Warning: If waveform {} already exists, it wil be"
-                "deleted now. If you want the same waveform on both"
+                "Warning: If waveform {} already exists, it wil be "
+                "deleted now. If you want the same waveform on both "
                 "channels, you have to create it with different names.".format(name)
             )
         self.inst.write('WLISt:WAVeform:DELete "{}"'.format(name))
