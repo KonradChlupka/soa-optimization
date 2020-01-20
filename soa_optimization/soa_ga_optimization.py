@@ -217,27 +217,24 @@ class SOAOptimization:
         self.osc = devices.Agilent86100C("GPIB1::7::INSTR")
 
         # setup oscilloscope for measurement
-        self.osc.set_acquire(average=True, count=30, points=1350)
-        self.osc.set_timebase(position=2.4e-8, range_=30e-9)
-        self.T = np.linspace(start=0, stop=30e-9, num=1350, endpoint=False)
+        # self.osc.set_acquire(average=True, count=30, points=1350)
+        # self.osc.set_timebase(position=2.4e-8, range_=30e-9)
+        self.T = np.linspace(start=0, stop=18e-9, num=1350, endpoint=False)
 
         # find rise-time ref values
-        self.osc.set_timebase(position=2.4e-8, range_=15e-9)
-        self.awg.send_waveform([-ss_amplitude] * 120 + [ss_amplitude] * 120)
-        time.sleep(5)
-        res = self.osc.measurement(1)
-        self.osc.set_timebase(position=2.4e-8, range_=30e-9)
-        self.ss_low = res[0]
-        self.ss_high = res[-1]
+        # self.osc.set_timebase(position=2.4e-8, range_=15e-9)
+        # self.awg.send_waveform([-ss_amplitude] * 120 + [ss_amplitude] * 120)
+        # time.sleep(5)
+        # res = self.osc.measurement(1)
+        # self.osc.set_timebase(position=2.4e-8, range_=30e-9)
+        # self.ss_low = res[0]
+        # self.ss_high = res[-1]
 
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = (
-            lambda: [random.uniform(-1, 0) for _ in range(30)]
-            + [random.uniform(0, 1) for _ in range(90)]
-        )
+        initial = lambda: [random.uniform(-1, 1) for _ in range(240)]
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
@@ -259,27 +256,24 @@ class SOAOptimization:
         Returns:
             bool: True is driving signal is valid, False otherwise.
         """
-        return (
-            all(i > -1.0 for i in U)
-            and all(i < 1.0 for i in U)
-            and all(i < 0.0 for i in U[28:30])
-            and all(i > 0.0 for i in U[30:32])
-        )
+        return all(i > -1.0 for i in U) and all(i < 1.0 for i in U)
 
     def SOA_fitness(self, U, gen=None):
         if not self.valid_U(U):
             return (1000.0,)
         else:
             global global_logbook
-            expanded_U = [-ss_amplitude] * 90 + list(U) + [ss_amplitude] * 30
-            self.awg.send_waveform(expanded_U, suppress_messages=True)
+            self.awg.send_waveform(U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
-            si = StepInfo(result, self.T, self.ss_low, self.ss_high, step_length=675)
-            si.U = expanded_U
+            # sp (set point) is the response desired
+            sp = [0.00018425481270903] * 299 + [0.00162583907142857] * 1051
+            sp_mse = np.mean((np.array(result) - np.array(sp)) ** 2)
+            si = StepInfo(result, self.T)
             si.gen = gen
+            si.sp_mse = sp_mse
             global_logbook.append(si)
-            return (si.settling_time,)
+            return (si.sp_mse,)
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
@@ -319,4 +313,4 @@ class SOAOptimization:
 if __name__ == "__main__":
     x = SOAOptimization()
     x.run(show_final_plot=False)
-    pickle.dump(global_logbook, open("second_settling_time.pickle", "wb"))
+    pickle.dump(global_logbook, open("sp_mse.pickle", "wb"))
