@@ -5,6 +5,7 @@ import threading
 import time
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from deap import algorithms  # contains ready genetic evolutionary loops
 from deap import base  # contains Toolbox and base Fitness
@@ -13,6 +14,10 @@ from deap import tools  # contains operators
 from scipy import signal
 
 from step_info import StepInfo
+
+# List[List[float]], each el. of global logbook is one optimization
+# which holds the best MSE per generation
+global_logbook = []
 
 
 def find_x_init(trans_func):
@@ -66,7 +71,6 @@ def simulation_fitness(U, T, X0, trans_func):
     else:
         (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
         si = StepInfo(yout, T, yout[0], yout[-1])
-        t = si.rise_time
         mse = si.mse
         return (mse,)
 
@@ -341,6 +345,7 @@ class SimulationOptimization:
         )
 
         gen, min_, = self.logbook.select("gen", "min_fitness")
+        global_logbook.append(min_)
         if show_final_plot:
             plt.figure()
             plt.plot(gen, min_, label="minimum")
@@ -360,15 +365,15 @@ def hyperparameter_optimization(optimizing, range_):
             optimization.
     """
     default_args = {
-        "pop_size": 60,
+        "pop_size": 100,
         "mu": 0,
-        "sigma": 0.15,
-        "indpb": 0.06,
-        "tournsize": 4,
-        "cxpb": 0.9,
-        "mutpb": 0.3,
+        "sigma": 0.1,
+        "indpb": 0.05,
+        "tournsize": 3,
+        "cxpb": 0.6,
+        "mutpb": 0.05,
     }
-    tot_evals = 80000
+    tot_evals = 50000
 
     pop_size = default_args["pop_size"]
     mu = default_args["mu"]
@@ -379,7 +384,6 @@ def hyperparameter_optimization(optimizing, range_):
     mutpb = default_args["mutpb"]
 
     for i in range_:
-        random.seed(0)
         if optimizing == "pop_size":
             pop_size = i
         elif optimizing == "mu":
@@ -414,20 +418,86 @@ def hyperparameter_optimization(optimizing, range_):
             interactive=False,
             show_plotting=False,
         )
-        x.run(show_final_plot=True)
-        plt.ylim((0.9, 1.11))
-        plt.pause(0.5)
-        plt.savefig(
-            "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
-                optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
-            )
-        )
-        plt.pause(0.5)
-        plt.close()
-        plt.pause(0.5)
+        x.run(show_final_plot=False)
+        # plt.ylim((0.9, 1.11))
+        # plt.pause(0.5)
+        # plt.savefig(
+        #     "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
+        #         optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
+        #     )
+        # )
+        # plt.pause(0.5)
+        # plt.close()
+        # plt.pause(0.5)
         del x
 
 
 if __name__ == "__main__":
-    x = SimulationOptimization()
-    x.run()
+    # hyperparameter_optimization("pop_size", [100])  # default
+    # hyperparameter_optimization("cxpb", [0.5])
+    # hyperparameter_optimization("indpb", [0.1, 0.02])
+    # hyperparameter_optimization("mutpb", [0.02, 0.5])
+    # hyperparameter_optimization("sigma", [0.05, 0.25])
+    # hyperparameter_optimization("tournsize", [2, 8])
+    # default_args = {
+    #     "pop_size": 100,
+    #     "mu": 0,
+    #     "sigma": 0.1,
+    #     "indpb": 0.05,
+    #     "tournsize": 3,
+    #     "cxpb": 0.6,
+    #     "mutpb": 0.05,
+    # }
+    optimal_args = {
+        "pop_size": 100,
+        "mu": 0,
+        "sigma": 0.15,
+        "indpb": 0.06,
+        "tournsize": 4,
+        "cxpb": 0.9,
+        "mutpb": 0.3,
+    }
+    # for _ in range(10):
+    #     x = SimulationOptimization(
+    #         pop_size=default_args["pop_size"],
+    #         mu=default_args["mu"],
+    #         sigma=default_args["sigma"],
+    #         indpb=default_args["indpb"],
+    #         tournsize=default_args["tournsize"],
+    #         cxpb=default_args["cxpb"],
+    #         mutpb=default_args["mutpb"],
+    #         ngen=500,
+    #         interactive=False,
+    #         show_plotting=False,
+    #     )
+    #     x.run(show_final_plot=False)
+    #     del x
+    # for _ in range(10):
+    #     x = SimulationOptimization(
+    #         pop_size=optimal_args["pop_size"],
+    #         mu=optimal_args["mu"],
+    #         sigma=optimal_args["sigma"],
+    #         indpb=optimal_args["indpb"],
+    #         tournsize=optimal_args["tournsize"],
+    #         cxpb=optimal_args["cxpb"],
+    #         mutpb=optimal_args["mutpb"],
+    #         ngen=500,
+    #         interactive=False,
+    #         show_plotting=False,
+    #     )
+    #     x.run(show_final_plot=False)
+    #     del x
+    x = SimulationOptimization(
+        pop_size=optimal_args["pop_size"],
+        mu=optimal_args["mu"],
+        sigma=optimal_args["sigma"],
+        indpb=optimal_args["indpb"],
+        tournsize=optimal_args["tournsize"],
+        cxpb=optimal_args["cxpb"],
+        mutpb=optimal_args["mutpb"],
+        ngen=500,
+        interactive=False,
+        show_plotting=False,
+    )
+    x.run(show_final_plot=False)
+    # pd.DataFrame(global_logbook).to_csv("output.csv", index=False, header=False)
