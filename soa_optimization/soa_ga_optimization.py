@@ -18,6 +18,21 @@ from step_info import StepInfo
 ss_amplitude = 0.5
 global_logbook = []
 
+# PISIC shell
+"""
+min:            -4V     -> -1
+max:            4V      -> 1
+ss_low:         -2V     -> -0.5
+ss_low_shell:   -1.5V   -> -0.375
+ss_high_shell:  2V      -> 0.5
+n_free_before:  30??
+n_free_after:   30??
+"""
+ss_low_shell = -0.375
+ss_high_shell = 0.5
+n_free_before = 30
+n_free_after = 30
+
 
 def quitting_thread(newstdin, flag):
     """Used as a thread scanning for "q" from sys.stdin.
@@ -180,13 +195,13 @@ def eaSimple(
 class SOAOptimization:
     def __init__(
         self,
-        pop_size=120,
+        pop_size=100,
         mu=0,
         sigma=0.15,
         indpb=0.06,
         tournsize=4,
         cxpb=0.9,
-        mutpb=0.45,
+        mutpb=0.30,
         ngen=2000,
         interactive=True,
         show_plotting=True,
@@ -217,8 +232,8 @@ class SOAOptimization:
         self.osc = devices.Agilent86100C("GPIB1::7::INSTR")
 
         # setup oscilloscope for measurement
-        # self.osc.set_acquire(average=True, count=30, points=1350)
-        # self.osc.set_timebase(position=2.4e-8, range_=30e-9)
+        self.osc.set_acquire(average=True, count=30, points=1350)
+        self.osc.set_timebase(position=2.4e-8, range_=18e-9)
         self.T = np.linspace(start=0, stop=18e-9, num=1350, endpoint=False)
 
         # find rise-time ref values
@@ -234,7 +249,11 @@ class SOAOptimization:
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = lambda: [random.uniform(-1, 1) for _ in range(240)]
+        initial = lambda: (
+            [random.uniform(-1, ss_low_shell) for _ in range(60 - n_free_before)]
+            + [random.uniform(-1, 1) for _ in range(n_free_before + n_free_after)]
+            + [random.uniform(-1, ss_high_shell) for _ in range(180 - n_free_after)]
+        )
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
@@ -256,7 +275,12 @@ class SOAOptimization:
         Returns:
             bool: True is driving signal is valid, False otherwise.
         """
-        return all(i > -1.0 for i in U) and all(i < 1.0 for i in U)
+        return (
+            all(i < ss_low_shell for i in U[: 60 - n_free_before])
+            and all(i < ss_high_shell for i in U[60 + n_free_after :])
+            and all(i > -1.0 for i in U)
+            and all(i < 1.0 for i in U)
+        )
 
     def SOA_fitness(self, U, gen=None):
         if not self.valid_U(U):
@@ -314,4 +338,4 @@ class SOAOptimization:
 if __name__ == "__main__":
     x = SOAOptimization()
     x.run(show_final_plot=False)
-    pickle.dump(global_logbook, open("sp_mse.pickle", "wb"))
+    pickle.dump(global_logbook, open("sp_mse_with_shell.pickle", "wb"))
