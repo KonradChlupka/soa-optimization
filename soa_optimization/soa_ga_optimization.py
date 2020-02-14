@@ -270,6 +270,7 @@ class SOAOptimization:
             sp = [0.00018425481270903] * 299 + [0.00162583907142857] * 1051
             sp_mse = np.mean((np.array(result) - np.array(sp)) ** 2)
             si = StepInfo(result, self.T)
+            si.U = U
             si.gen = gen
             si.sp_mse = sp_mse
             global_logbook.append(si)
