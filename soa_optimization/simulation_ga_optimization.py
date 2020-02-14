@@ -29,50 +29,61 @@ def find_x_init(trans_func):
     Returns:
         np.ndarray[float]: System's response.
     """
-    U = np.array([-1.0] * 480)
+    U = np.array([-0.5] * 480)
     T = np.linspace(0, 40e-9, 480)
     (_, _, xout) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-13)
     return xout[-1]
+
+
+def find_y_ss(trans_func, input_ss):
+    """Calculates the output resulting from long input.
+
+    Args:
+        trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
+        input_ss (float)
+
+    Returns:
+        float: The output signal level.
+    """
+    U = np.array([input_ss] * 480)
+    T = np.linspace(0, 40e-9, 480)
+    (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=None, atol=1e-13)
+    return yout[-1]
 
 
 def valid_driver_signal(U):
     """Checks if the driving signal is valid.
 
     Args:
-        U (np.ndarray[float]): Driving signal. If shorter than 240
-        points, then assumed that it was clipped from the front.
+        U (np.ndarray[float]): Driving signal.
 
     Returns:
         bool: True is driving signal is valid, False otherwise.
     """
-    length = len(U)
-    if length < 240:
-        U = (240 - length) * [-0.75] + list(U)
-    return (
-        all(i > -1.0 for i in U)
-        and all(i < 1.0 for i in U)
-        and all(i < -0.5 for i in U[10:110])
-        and all(i > 0.5 for i in U[130:230])
-    )
+    return all(i > -1.0 for i in U) and all(i < 1.0 for i in U)
 
 
-def simulation_fitness(U, T, X0, trans_func):
+def simulation_fitness(U, T, X0, trans_func, ss_low, ss_high):
     """Calculates fitness of a match.
 
     Args:
-        U (np.ndarray[float]): Driving signal.
+        U (np.ndarray[float]): Driving signal of length 1000.
         T (np.ndarray[float])
         X0 (float): System's steady-state response to a -1 input.
         trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
+        ss_low (float): Low steady-state for MSE calculation.
+        ss_high (float): High steady_state for MSE calculation.
 
+    Returns:
+        Tuple[Float]: MSE.
     """
     if not valid_driver_signal(U):
         return (1000.0,)
     else:
+        sp = [ss_low] * 100 + [ss_high] * 300
         (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
-        si = StepInfo(yout, T, yout[0], yout[-1])
-        mse = si.mse
-        return (mse,)
+        sp_mse = np.mean((np.array(yout) - np.array(sp)) ** 2)
+        return (sp_mse,)
 
 
 def best_of_population(population):
@@ -260,11 +271,11 @@ class SimulationOptimization:
         tournsize=4,
         cxpb=0.9,
         mutpb=0.3,
-        ngen=50,
+        ngen=100,
         interactive=True,
         show_plotting=True,
     ):
-        """Implements optimization for simulated SOA.
+        """Implements optimizat. for simulated SOA with optimal hypers.
 
         Args:
             pop_size (int): Populaiton size (number of individuals in
@@ -298,21 +309,21 @@ class SimulationOptimization:
             2.40236028415562e90,
         ]
         self.trans_func = signal.TransferFunction(num, den)
-        self.T = np.linspace(0, 20e-9 * 130 / 240, 130)
+        self.T = np.linspace(0, 20e-9, 400, endpoint=False)
         self.X0 = find_x_init(self.trans_func)
+        self.ss_low = find_y_ss(self.trans_func, -0.5)
+        self.ss_high = find_y_ss(self.trans_func, 0.5)
 
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = [random.uniform(-1, 1) for _ in range(20)] + [
-            random.uniform(0.5, 1) for _ in range(110)
-        ]
+        initial = lambda: [random.uniform(-1, 1) for _ in range(400)]
         # fmt: off
-        self.toolbox.register("ind", tools.initIterate, creator.Individual, lambda: initial)
+        self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
         self.toolbox.register("map", multiprocessing.Pool().map)
-        self.toolbox.register("evaluate", simulation_fitness, T=self.T, X0=self.X0, trans_func=self.trans_func)
+        self.toolbox.register("evaluate", simulation_fitness, T=self.T, X0=self.X0, trans_func=self.trans_func, ss_low=self.ss_low, ss_high=self.ss_high)
         self.toolbox.register("mate", tools.cxTwoPoint)
         self.toolbox.register("mutate", tools.mutGaussian, mu=mu, sigma=sigma, indpb=indpb)
         self.toolbox.register("select", tools.selTournament, tournsize=tournsize)
@@ -495,9 +506,9 @@ if __name__ == "__main__":
         tournsize=optimal_args["tournsize"],
         cxpb=optimal_args["cxpb"],
         mutpb=optimal_args["mutpb"],
-        ngen=500,
-        interactive=False,
-        show_plotting=False,
+        ngen=5000,
+        interactive=True,
+        show_plotting=True,
     )
     x.run(show_final_plot=False)
     # pd.DataFrame(global_logbook).to_csv("output.csv", index=False, header=False)
