@@ -211,12 +211,15 @@ class SOAOptimization:
         self.T = np.linspace(start=0, stop=30e-9, num=1350, endpoint=False)
 
         # find rise-time ref values
-        self.awg.send_waveform([-ss_amplitude] * 240)
-        time.sleep(5)
-        self.ss_low = self.osc.measurement(1)[120]
-        self.awg.send_waveform([ss_amplitude] * 240)
-        time.sleep(5)
-        self.ss_high = self.osc.measurement(1)[120]
+        self.osc.set_timebase(position=2.4e-8, range_=15e-9)
+        time.sleep(1)
+        self.awg.send_waveform([-ss_amplitude] * 120 + [ss_amplitude] * 120)
+        time.sleep(6)
+        res = self.osc.measurement(1)
+        self.osc.set_timebase(position=2.4e-8, range_=30e-9)
+        time.sleep(1)
+        self.ss_low = res[0]
+        self.ss_high = res[-1]
 
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.Fitness)
