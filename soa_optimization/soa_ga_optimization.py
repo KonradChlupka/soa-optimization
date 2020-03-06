@@ -18,21 +18,6 @@ from step_info import StepInfo
 ss_amplitude = 0.5
 global_logbook = []
 
-# PISIC shell
-"""
-min:            -4V     -> -1
-max:            4V      -> 1
-ss_low:         -2V     -> -0.5
-ss_low_shell:   -1.5V   -> -0.375
-ss_high_shell:  2V      -> 0.5
-n_free_before:  30??
-n_free_after:   30??
-"""
-ss_low_shell = -0.375
-ss_high_shell = 0.5
-n_free_before = 30
-n_free_after = 30
-
 
 def quitting_thread(newstdin, flag):
     """Used as a thread scanning for "q" from sys.stdin.
@@ -60,10 +45,8 @@ def eaSimple(
 ):
     """This algorithm reproduce the simplest evolutionary algorithm as
     presented in chapter 7 of [Back2000]_.
-
     The algorithm is copied from algorithms.py (DEAP lib), with slight
     modifications.
-
     :param population: A list of individuals.
     :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
                     operators.
@@ -80,7 +63,6 @@ def eaSimple(
     :returns: The final population
     :returns: A class:`~deap.tools.Logbook` with the statistics of the
               evolution
-
     The algorithm takes in a population and evolves it in place using the
     :meth:`varAnd` method. It returns the optimized population and a
     :class:`~deap.tools.Logbook` with the statistics of the evolution. The
@@ -88,14 +70,12 @@ def eaSimple(
     each generation and the statistics if a :class:`~deap.tools.Statistics` is
     given as argument. The *cxpb* and *mutpb* arguments are passed to the
     :func:`varAnd` function. The pseudocode goes as follow ::
-
         evaluate(population)
         for g in range(ngen):
             population = select(population, len(population))
             offspring = varAnd(population, toolbox, cxpb, mutpb)
             evaluate(offspring)
             population = offspring
-
     As stated in the pseudocode above, the algorithm goes as follow. First, it
     evaluates the individuals with an invalid fitness. Second, it enters the
     generational loop where the selection procedure is applied to entirely
@@ -108,16 +88,12 @@ def eaSimple(
     compute the statistics on this population. Finally, when *ngen*
     generations are done, the algorithm returns a tuple with the final
     population and a :class:`~deap.tools.Logbook` of the evolution.
-
     .. note::
-
         Using a non-stochastic selection method will result in no selection as
         the operator selects *n* individuals from a pool of *n*.
-
     This function expects the :meth:`toolbox.mate`, :meth:`toolbox.mutate`,
     :meth:`toolbox.select` and :meth:`toolbox.evaluate` aliases to be
     registered in the toolbox.
-
     .. [Back2000] Back, Fogel and Michalewicz, "Evolutionary Computation 1 :
        Basic Algorithms and Operators", 2000.
     """
@@ -201,16 +177,14 @@ class SOAOptimization:
         indpb=0.06,
         tournsize=4,
         cxpb=0.9,
-        mutpb=0.30,
+        mutpb=0.45,
         ngen=2000,
         interactive=True,
         show_plotting=True,
     ):
         """Implements optimization for real SOA.
-
         The hypers used are optimized by hyperparameter optimization on
         the simulation.
-
         Args:
             pop_size (int): Populaiton size (number of individuals in
                 each generation).
@@ -233,27 +207,24 @@ class SOAOptimization:
 
         # setup oscilloscope for measurement
         self.osc.set_acquire(average=True, count=30, points=1350)
-        self.osc.set_timebase(position=2.4e-8, range_=18e-9)
-        self.T = np.linspace(start=0, stop=18e-9, num=1350, endpoint=False)
+        self.osc.set_timebase(position=2.4e-8, range_=30e-9)
+        self.T = np.linspace(start=0, stop=30e-9, num=1350, endpoint=False)
 
         # find rise-time ref values
-        # self.osc.set_timebase(position=2.4e-8, range_=15e-9)
-        # self.awg.send_waveform([-ss_amplitude] * 120 + [ss_amplitude] * 120)
-        # time.sleep(5)
-        # res = self.osc.measurement(1)
-        # self.osc.set_timebase(position=2.4e-8, range_=30e-9)
-        # self.ss_low = res[0]
-        # self.ss_high = res[-1]
+        self.awg.send_waveform([-ss_amplitude] * 240)
+        time.sleep(5)
+        self.ss_low = self.osc.measurement(1)[120]
+        self.awg.send_waveform([ss_amplitude] * 240)
+        time.sleep(5)
+        self.ss_high = self.osc.measurement(1)[120]
 
         creator.create("Fitness", base.Fitness, weights=(-1.0,))
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = lambda: (
-            [random.uniform(-1, ss_low_shell) for _ in range(60 - n_free_before)]
-            + [random.uniform(-1, 1) for _ in range(n_free_before + n_free_after)]
-            + [random.uniform(-1, ss_high_shell) for _ in range(180 - n_free_after)]
-        )
+        initial = lambda: [random.uniform(-1, 0) for _ in range(30)] + [
+            random.uniform(0, 1) for _ in range(90)
+        ]
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
@@ -266,20 +237,18 @@ class SOAOptimization:
 
     def valid_U(self, U):
         """Checks if the driving signal is valid.
-
         Args:
             U (List[float]): Driving signal. Length is assumed to be 60,
                 and each point must be strongly between -1.0 and 1.0.
                 The rising edge must be in the middle.
-
         Returns:
             bool: True is driving signal is valid, False otherwise.
         """
         return (
-            all(i < ss_low_shell for i in U[: 60 - n_free_before])
-            and all(i < ss_high_shell for i in U[60 + n_free_after :])
-            and all(i > -1.0 for i in U)
+            all(i > -1.0 for i in U)
             and all(i < 1.0 for i in U)
+            and all(i < 0.0 for i in U[28:30])
+            and all(i > 0.0 for i in U[30:32])
         )
 
     def SOA_fitness(self, U, gen=None):
@@ -287,22 +256,18 @@ class SOAOptimization:
             return (1000.0,)
         else:
             global global_logbook
-            self.awg.send_waveform(U, suppress_messages=True)
+            expanded_U = [-ss_amplitude] * 90 + list(U) + [ss_amplitude] * 30
+            self.awg.send_waveform(expanded_U, suppress_messages=True)
             time.sleep(5)
             result = self.osc.measurement(channel=1)
-            # sp (set point) is the response desired
-            sp = [0.00018425481270903] * 299 + [0.00162583907142857] * 1051
-            sp_mse = np.mean((np.array(result) - np.array(sp)) ** 2)
-            si = StepInfo(result, self.T)
-            si.U = U
+            si = StepInfo(result, self.T, self.ss_low, self.ss_high, step_length=675)
+            si.U = expanded_U
             si.gen = gen
-            si.sp_mse = sp_mse
             global_logbook.append(si)
-            return (si.sp_mse,)
+            return (si.mse,)
 
     def run(self, show_final_plot=True):
         """Runs the optimization.
-
         Args:
             show_final_plot (bool): If True, will show a plot with the
                 fitness over the generations.
@@ -338,4 +303,4 @@ class SOAOptimization:
 if __name__ == "__main__":
     x = SOAOptimization()
     x.run(show_final_plot=False)
-    pickle.dump(global_logbook, open("sp_mse_with_shell.pickle", "wb"))
+    pickle.dump(global_logbook, open("second_mse.pickle", "wb"))
