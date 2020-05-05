@@ -1,12 +1,12 @@
 import multiprocessing
+import pickle
 import random
 import sys
 import threading
 import time
 
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 from deap import algorithms  # contains ready genetic evolutionary loops
 from deap import base  # contains Toolbox and base Fitness
 from deap import creator  # creating types
@@ -80,7 +80,7 @@ def simulation_fitness(U, T, X0, trans_func, ss_low, ss_high):
     if not valid_driver_signal(U):
         return (1000.0,)
     else:
-        sp = [ss_low] * 100 + [ss_high] * 300
+        sp = [ss_low] * 120 + [ss_high] * 120
         (_, yout, _) = signal.lsim2(trans_func, U=U, T=T, X0=X0, atol=1e-12)
         sp_mse = np.mean((np.array(yout) - np.array(sp)) ** 2)
         return (sp_mse,)
@@ -264,14 +264,14 @@ def eaSimple(
 class SimulationOptimization:
     def __init__(
         self,
-        pop_size=60,
+        pop_size=100,
         mu=0,
         sigma=0.15,
         indpb=0.06,
         tournsize=4,
         cxpb=0.9,
-        mutpb=0.3,
-        ngen=100,
+        mutpb=0.45,
+        ngen=200,
         interactive=True,
         show_plotting=True,
     ):
@@ -309,7 +309,7 @@ class SimulationOptimization:
             2.40236028415562e90,
         ]
         self.trans_func = signal.TransferFunction(num, den)
-        self.T = np.linspace(0, 20e-9, 400, endpoint=False)
+        self.T = np.linspace(0, 20e-9, 240, endpoint=False)
         self.X0 = find_x_init(self.trans_func)
         self.ss_low = find_y_ss(self.trans_func, -0.5)
         self.ss_high = find_y_ss(self.trans_func, 0.5)
@@ -318,7 +318,7 @@ class SimulationOptimization:
         creator.create("Individual", list, fitness=creator.Fitness)
 
         self.toolbox = base.Toolbox()
-        initial = lambda: [random.uniform(-1, 1) for _ in range(400)]
+        initial = lambda: [random.uniform(-1, 1) for _ in range(240)]
         # fmt: off
         self.toolbox.register("ind", tools.initIterate, creator.Individual, initial)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.ind, n=pop_size)
@@ -367,148 +367,7 @@ class SimulationOptimization:
             plt.pause(0.05)
 
 
-def hyperparameter_optimization(optimizing, range_):
-    """Performs hyperparameter optimization on the simulation.
-
-    Args:
-        optimizing (str): Name of parameter to be optimized.
-        range_ (Iterable(number)): Values to be tried for the
-            optimization.
-    """
-    default_args = {
-        "pop_size": 100,
-        "mu": 0,
-        "sigma": 0.1,
-        "indpb": 0.05,
-        "tournsize": 3,
-        "cxpb": 0.6,
-        "mutpb": 0.05,
-    }
-    tot_evals = 50000
-
-    pop_size = default_args["pop_size"]
-    mu = default_args["mu"]
-    sigma = default_args["sigma"]
-    indpb = default_args["indpb"]
-    tournsize = default_args["tournsize"]
-    cxpb = default_args["cxpb"]
-    mutpb = default_args["mutpb"]
-
-    for i in range_:
-        if optimizing == "pop_size":
-            pop_size = i
-        elif optimizing == "mu":
-            mu = i
-        elif optimizing == "sigma":
-            sigma = i
-        elif optimizing == "indpb":
-            indpb = i
-        elif optimizing == "tournsize":
-            tournsize = i
-        elif optimizing == "cxpb":
-            cxpb = i
-        elif optimizing == "mutpb":
-            mutpb = i
-
-        ngen = tot_evals // pop_size
-        print(
-            "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
-                optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
-            )
-        )
-
-        x = SimulationOptimization(
-            pop_size=pop_size,
-            mu=mu,
-            sigma=sigma,
-            indpb=indpb,
-            tournsize=tournsize,
-            cxpb=cxpb,
-            mutpb=mutpb,
-            ngen=ngen,
-            interactive=False,
-            show_plotting=False,
-        )
-        x.run(show_final_plot=False)
-        # plt.ylim((0.9, 1.11))
-        # plt.pause(0.5)
-        # plt.savefig(
-        #     "optimizing {}, pop_size {}, mu {}, sigma {}, indpb {}, tournsize {}, cxpb {}, mutpb {}, ngen {}.png".format(
-        #         optimizing, pop_size, mu, sigma, indpb, tournsize, cxpb, mutpb, ngen
-        #     )
-        # )
-        # plt.pause(0.5)
-        # plt.close()
-        # plt.pause(0.5)
-        del x
-
-
 if __name__ == "__main__":
-    # hyperparameter_optimization("pop_size", [100])  # default
-    # hyperparameter_optimization("cxpb", [0.5])
-    # hyperparameter_optimization("indpb", [0.1, 0.02])
-    # hyperparameter_optimization("mutpb", [0.02, 0.5])
-    # hyperparameter_optimization("sigma", [0.05, 0.25])
-    # hyperparameter_optimization("tournsize", [2, 8])
-    # default_args = {
-    #     "pop_size": 100,
-    #     "mu": 0,
-    #     "sigma": 0.1,
-    #     "indpb": 0.05,
-    #     "tournsize": 3,
-    #     "cxpb": 0.6,
-    #     "mutpb": 0.05,
-    # }
-    optimal_args = {
-        "pop_size": 100,
-        "mu": 0,
-        "sigma": 0.15,
-        "indpb": 0.06,
-        "tournsize": 4,
-        "cxpb": 0.9,
-        "mutpb": 0.3,
-    }
-    # for _ in range(10):
-    #     x = SimulationOptimization(
-    #         pop_size=default_args["pop_size"],
-    #         mu=default_args["mu"],
-    #         sigma=default_args["sigma"],
-    #         indpb=default_args["indpb"],
-    #         tournsize=default_args["tournsize"],
-    #         cxpb=default_args["cxpb"],
-    #         mutpb=default_args["mutpb"],
-    #         ngen=500,
-    #         interactive=False,
-    #         show_plotting=False,
-    #     )
-    #     x.run(show_final_plot=False)
-    #     del x
-    # for _ in range(10):
-    #     x = SimulationOptimization(
-    #         pop_size=optimal_args["pop_size"],
-    #         mu=optimal_args["mu"],
-    #         sigma=optimal_args["sigma"],
-    #         indpb=optimal_args["indpb"],
-    #         tournsize=optimal_args["tournsize"],
-    #         cxpb=optimal_args["cxpb"],
-    #         mutpb=optimal_args["mutpb"],
-    #         ngen=500,
-    #         interactive=False,
-    #         show_plotting=False,
-    #     )
-    #     x.run(show_final_plot=False)
-    #     del x
-    x = SimulationOptimization(
-        pop_size=optimal_args["pop_size"],
-        mu=optimal_args["mu"],
-        sigma=optimal_args["sigma"],
-        indpb=optimal_args["indpb"],
-        tournsize=optimal_args["tournsize"],
-        cxpb=optimal_args["cxpb"],
-        mutpb=optimal_args["mutpb"],
-        ngen=5000,
-        interactive=True,
-        show_plotting=True,
-    )
+    x = SimulationOptimization()
     x.run(show_final_plot=False)
-    # pd.DataFrame(global_logbook).to_csv("output.csv", index=False, header=False)
+    pickle.dump(global_logbook, open("simulation_mse.pickle", "wb"))

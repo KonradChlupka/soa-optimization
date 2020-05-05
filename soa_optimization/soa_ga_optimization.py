@@ -15,6 +15,8 @@ from deap import tools  # contains operators
 import devices
 from step_info import StepInfo
 
+# List[List[float]], each el. of global logbook is one optimization
+# which holds the best MSE per generation
 ss_amplitude = 0.5
 global_logbook = []
 
@@ -45,8 +47,10 @@ def eaSimple(
 ):
     """This algorithm reproduce the simplest evolutionary algorithm as
     presented in chapter 7 of [Back2000]_.
-    The algorithm is copied from algorithms.py (DEAP lib), with slight
+
+    The algorithm is copied from algorithms.py, with slight
     modifications.
+
     :param population: A list of individuals.
     :param toolbox: A :class:`~deap.base.Toolbox` that contains the evolution
                     operators.
@@ -63,6 +67,7 @@ def eaSimple(
     :returns: The final population
     :returns: A class:`~deap.tools.Logbook` with the statistics of the
               evolution
+
     The algorithm takes in a population and evolves it in place using the
     :meth:`varAnd` method. It returns the optimized population and a
     :class:`~deap.tools.Logbook` with the statistics of the evolution. The
@@ -70,12 +75,14 @@ def eaSimple(
     each generation and the statistics if a :class:`~deap.tools.Statistics` is
     given as argument. The *cxpb* and *mutpb* arguments are passed to the
     :func:`varAnd` function. The pseudocode goes as follow ::
+
         evaluate(population)
         for g in range(ngen):
             population = select(population, len(population))
             offspring = varAnd(population, toolbox, cxpb, mutpb)
             evaluate(offspring)
             population = offspring
+
     As stated in the pseudocode above, the algorithm goes as follow. First, it
     evaluates the individuals with an invalid fitness. Second, it enters the
     generational loop where the selection procedure is applied to entirely
@@ -88,12 +95,16 @@ def eaSimple(
     compute the statistics on this population. Finally, when *ngen*
     generations are done, the algorithm returns a tuple with the final
     population and a :class:`~deap.tools.Logbook` of the evolution.
+
     .. note::
+
         Using a non-stochastic selection method will result in no selection as
         the operator selects *n* individuals from a pool of *n*.
+
     This function expects the :meth:`toolbox.mate`, :meth:`toolbox.mutate`,
     :meth:`toolbox.select` and :meth:`toolbox.evaluate` aliases to be
     registered in the toolbox.
+
     .. [Back2000] Back, Fogel and Michalewicz, "Evolutionary Computation 1 :
        Basic Algorithms and Operators", 2000.
     """
@@ -178,7 +189,7 @@ class SOAOptimization:
         tournsize=4,
         cxpb=0.9,
         mutpb=0.45,
-        ngen=2000,
+        ngen=200,
         interactive=True,
         show_plotting=True,
     ):
@@ -306,4 +317,4 @@ class SOAOptimization:
 if __name__ == "__main__":
     x = SOAOptimization()
     x.run(show_final_plot=False)
-    pickle.dump(global_logbook, open("second_mse.pickle", "wb"))
+    pickle.dump(global_logbook, open("soa_mse.pickle", "wb"))

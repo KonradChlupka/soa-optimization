@@ -55,7 +55,7 @@ class StepInfo:
             self.t_unclipped = self.t
             self.y = self.y[:step_length]
             self.t = self.t[:step_length]
-        
+
         if ss_low:
             self.ss_low = ss_low
         else:
@@ -99,7 +99,7 @@ class StepInfo:
 
     def _settling_time(self):
         """Calculates settling time.
-        
+
         The time after which the rising edge behins is determined by
         rise_time_percentage. settling_time_percentage determines the
         range within which the signal must be contained to count as
