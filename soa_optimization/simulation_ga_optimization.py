@@ -21,7 +21,7 @@ global_logbook = []
 
 
 def find_x_init(trans_func):
-    """Calculates the state-vector resulting from long -1 input.
+    """Calculates the state-vector resulting from long -0.5 input.
 
     Args:
         trans_func (scipy.signal.ltisys.TransferFunctionContinuous)
